@@ -1,0 +1,66 @@
+package com.embos.mapper;
+
+import com.embos.dto.TaskDtos;
+import com.embos.entity.Staff;
+import com.embos.entity.Task;
+import java.time.LocalDate;
+import javax.annotation.processing.Generated;
+import org.springframework.stereotype.Component;
+
+@Generated(
+    value = "org.mapstruct.ap.MappingProcessor",
+    date = "2026-08-02T20:17:05+0630",
+    comments = "version: 1.6.2, compiler: javac, environment: Java 19.0.1 (Oracle Corporation)"
+)
+@Component
+public class TaskMapperImpl implements TaskMapper {
+
+    @Override
+    public TaskDtos.Response toResponse(Task task) {
+        if ( task == null ) {
+            return null;
+        }
+
+        Long assignedStaffId = null;
+        String assignedStaffName = null;
+        Long id = null;
+        String title = null;
+        String description = null;
+        LocalDate dueDate = null;
+        String priority = null;
+        String status = null;
+
+        assignedStaffId = taskAssignedStaffId( task );
+        assignedStaffName = taskAssignedStaffName( task );
+        id = task.getId();
+        title = task.getTitle();
+        description = task.getDescription();
+        dueDate = task.getDueDate();
+        if ( task.getPriority() != null ) {
+            priority = task.getPriority().name();
+        }
+        if ( task.getStatus() != null ) {
+            status = task.getStatus().name();
+        }
+
+        TaskDtos.Response response = new TaskDtos.Response( id, title, description, assignedStaffId, assignedStaffName, dueDate, priority, status );
+
+        return response;
+    }
+
+    private Long taskAssignedStaffId(Task task) {
+        Staff assignedStaff = task.getAssignedStaff();
+        if ( assignedStaff == null ) {
+            return null;
+        }
+        return assignedStaff.getId();
+    }
+
+    private String taskAssignedStaffName(Task task) {
+        Staff assignedStaff = task.getAssignedStaff();
+        if ( assignedStaff == null ) {
+            return null;
+        }
+        return assignedStaff.getName();
+    }
+}

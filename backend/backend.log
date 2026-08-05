@@ -1,0 +1,35 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2026-08-03T20:05:07.652+06:30  INFO 8488 --- [embos-backend] [           main] com.embos.EmbosApplication               : Starting EmbosApplication v0.0.1-SNAPSHOT using Java 19.0.1 with PID 8488 (C:\Users\PC\Documents\event\backend\target\embos-backend-0.0.1-SNAPSHOT.jar started by PC in C:\Users\PC\Documents\event\backend)
+2026-08-03T20:05:07.663+06:30  INFO 8488 --- [embos-backend] [           main] com.embos.EmbosApplication               : No active profile set, falling back to 1 default profile: "default"
+2026-08-03T20:05:12.224+06:30  INFO 8488 --- [embos-backend] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-08-03T20:05:12.577+06:30  INFO 8488 --- [embos-backend] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 331 ms. Found 8 JPA repository interfaces.
+2026-08-03T20:05:15.808+06:30  INFO 8488 --- [embos-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-08-03T20:05:15.886+06:30  INFO 8488 --- [embos-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-08-03T20:05:15.887+06:30  INFO 8488 --- [embos-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
+2026-08-03T20:05:16.117+06:30  INFO 8488 --- [embos-backend] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-08-03T20:05:16.121+06:30  INFO 8488 --- [embos-backend] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 8089 ms
+2026-08-03T20:05:16.915+06:30  INFO 8488 --- [embos-backend] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-08-03T20:05:17.487+06:30  INFO 8488 --- [embos-backend] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.4.4.Final
+2026-08-03T20:05:17.790+06:30  INFO 8488 --- [embos-backend] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-08-03T20:05:19.498+06:30  INFO 8488 --- [embos-backend] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-08-03T20:05:19.618+06:30  INFO 8488 --- [embos-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-08-03T20:05:20.356+06:30  INFO 8488 --- [embos-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@70543cae
+2026-08-03T20:05:20.365+06:30  INFO 8488 --- [embos-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-08-03T20:05:20.619+06:30  WARN 8488 --- [embos-backend] [           main] org.hibernate.dialect.Dialect            : HHH000511: The 5.5.0 version for [org.hibernate.dialect.MySQLDialect] is no longer supported, hence certain features may not work properly. The minimum supported version is 8.0.0. Check the community dialects project for available legacy versions.
+2026-08-03T20:05:25.252+06:30  INFO 8488 --- [embos-backend] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-08-03T20:05:25.825+06:30  INFO 8488 --- [embos-backend] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-08-03T20:05:30.517+06:30  INFO 8488 --- [embos-backend] [           main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@39329d81, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@63574d76, org.springframework.security.web.context.SecurityContextHolderFilter@58ec04f4, org.springframework.security.web.header.HeaderWriterFilter@38816a6c, org.springframework.web.filter.CorsFilter@586a9fe1, org.springframework.security.web.authentication.logout.LogoutFilter@6812708d, com.embos.security.JwtAuthFilter@1ced1d14, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@54e39504, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@2bdf6c7c, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@dcf64d2, org.springframework.security.web.session.SessionManagementFilter@11c372e9, org.springframework.security.web.access.ExceptionTranslationFilter@242a3997, org.springframework.security.web.access.intercept.AuthorizationFilter@2b3e2039]
+2026-08-03T20:05:31.716+06:30  INFO 8488 --- [embos-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path ''
+2026-08-03T20:05:31.796+06:30  INFO 8488 --- [embos-backend] [           main] com.embos.EmbosApplication               : Started EmbosApplication in 25.951 seconds (process running for 27.816)
+2026-08-03T20:06:48.374+06:30  INFO 8488 --- [embos-backend] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-08-03T20:06:48.375+06:30  INFO 8488 --- [embos-backend] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-08-03T20:06:48.378+06:30  INFO 8488 --- [embos-backend] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 3 ms
+2026-08-04T21:26:43.155+06:30  WARN 8488 --- [embos-backend] [l-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=23h51m26s718ms437µs300ns).
