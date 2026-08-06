@@ -46,6 +46,7 @@ function NewEventForm() {
         name: data.name,
         description: data.description || undefined,
         date: data.date,
+        durationInDays: data.durationInDays,
         venue: data.venue,
         capacity: data.capacity,
         registrationDeadline: data.registrationDeadline || undefined,
@@ -90,15 +91,26 @@ function NewEventForm() {
               {...register("description")}
             />
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
-              <Label required>Date</Label>
+              <Label required>Start date</Label>
               <Input
                 type="date"
                 invalid={!!errors.date}
                 {...register("date")}
               />
               <FieldError message={errors.date?.message} />
+            </div>
+            <div>
+              <Label required>Duration (days)</Label>
+              <Input
+                type="number"
+                min={1}
+                placeholder="1"
+                invalid={!!errors.durationInDays}
+                {...register("durationInDays")}
+              />
+              <FieldError message={errors.durationInDays?.message} />
             </div>
             <div>
               <Label required>Capacity</Label>

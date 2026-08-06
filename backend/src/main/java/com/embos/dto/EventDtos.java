@@ -14,6 +14,7 @@ public final class EventDtos {
             @NotBlank @Size(max = 200) String name,
             String description,
             @NotNull LocalDate date,
+            @Min(1) Integer durationInDays,
             @NotBlank @Size(max = 200) String venue,
             @NotNull @Min(1) Integer capacity,
             LocalDate registrationDeadline) {
@@ -24,6 +25,7 @@ public final class EventDtos {
             String name,
             String description,
             LocalDate date,
+            Integer durationInDays,
             String venue,
             Integer capacity,
             LocalDate registrationDeadline,

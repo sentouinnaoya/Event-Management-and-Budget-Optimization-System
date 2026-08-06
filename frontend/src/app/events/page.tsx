@@ -110,7 +110,14 @@ function EventsContent() {
               <div className="text-sm text-slate-600 space-y-1">
                 <p>
                   <span className="font-medium text-slate-700">Date:</span>{" "}
-                  {formatDate(event.date)}
+                  {(event.durationInDays ?? 1) > 1
+                    ? `${formatDate(event.date)} – ${formatDate(
+                        new Date(
+                          new Date(event.date).getTime() +
+                            ((event.durationInDays ?? 1) - 1) * 86400000
+                        ).toISOString().slice(0, 10)
+                      )}`
+                    : formatDate(event.date)}
                 </p>
                 <p>
                   <span className="font-medium text-slate-700">Venue:</span>{" "}

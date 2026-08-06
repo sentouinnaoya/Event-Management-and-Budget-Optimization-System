@@ -28,6 +28,7 @@ export interface Event {
   name: string;
   description?: string;
   date: string;
+  durationInDays?: number;
   venue: string;
   capacity: number;
   registrationDeadline?: string;
@@ -42,6 +43,7 @@ export interface EventInput {
   name: string;
   description?: string;
   date: string;
+  durationInDays?: number;
   venue: string;
   capacity: number;
   registrationDeadline?: string;
@@ -143,6 +145,7 @@ export interface Task {
   dueDate?: string;
   priority: Priority;
   status: TaskStatus;
+  completedAt?: string;
 }
 
 export interface TaskInput {
@@ -243,4 +246,40 @@ export interface StaffReportData {
   staff: Staff[];
   totalTasks: number;
   tasksDone: number;
+}
+
+export interface DailyDay {
+  day: number;
+  date: string;
+  totalSpent: number;
+  registered: number;
+  tasksCreated: number;
+  tasksDue: number;
+  tasksCompleted: number;
+  vendorsAdded: number;
+}
+
+export interface DailyOverview {
+  event: Event;
+  totalDays: number;
+  days: DailyDay[];
+}
+
+export interface DailyReport {
+  event: Event;
+  date: string;
+  day: number;
+  totalDays: number;
+  expenses: Expense[];
+  totalSpent: number;
+  expenseCount: number;
+  registered: number;
+  approved: number;
+  attended: number;
+  absent: number;
+  rejected: number;
+  tasksCreated: number;
+  tasksDue: number;
+  tasksCompleted: number;
+  vendorsAdded: number;
 }

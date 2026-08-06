@@ -15,6 +15,7 @@ export const eventSchema = z.object({
   name: z.string().min(2, "Event name is required"),
   description: z.string().optional(),
   date: z.string().min(1, "Event date is required"),
+  durationInDays: z.coerce.number().int().min(1).default(1),
   venue: z.string().min(2, "Venue is required"),
   capacity: z.coerce.number().min(1, "Capacity must be at least 1"),
   registrationDeadline: z.string().optional(),

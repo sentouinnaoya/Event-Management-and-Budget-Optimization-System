@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -15,6 +16,8 @@ import {
 import {
   useAttendanceReportQuery,
   useBudgetReportQuery,
+  useDailyOverviewQuery,
+  useDailyReportQuery,
   useExpensesReportQuery,
   useStaffReportQuery,
   useSummaryReportQuery,
@@ -39,6 +42,28 @@ export default function ReportsTab({ eventId }: { eventId: number }) {
   const vendors = useVendorsReportQuery(eventId);
   const staff = useStaffReportQuery(eventId);
   const attendance = useAttendanceReportQuery(eventId);
+  const dailyOverview = useDailyOverviewQuery(eventId);
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const daily = useDailyReportQuery(
+    { eventId, date: selectedDate },
+    { skip: !selectedDate }
+  );
+
+  const rangeLabel = useMemo(() => {
+    const event = summary.data?.event;
+    if (!event) return undefined;
+    const days = event.durationInDays ?? 1;
+    if (days <= 1) return formatDate(event.date);
+    const end = new Date(event.date);
+    end.setDate(end.getDate() + days - 1);
+    return `${formatDate(event.date)} – ${formatDate(end.toISOString().slice(0, 10))}`;
+  }, [summary.data]);
+
+  useEffect(() => {
+    if (!selectedDate && summary.data?.event?.date) {
+      setSelectedDate(summary.data.event.date);
+    }
+  }, [summary.data, selectedDate]);
 
   if (
     summary.isLoading ||
@@ -61,13 +86,14 @@ export default function ReportsTab({ eventId }: { eventId: number }) {
   const v = vendors.data;
   const st = staff.data;
   const a = attendance.data;
+  const overview = dailyOverview.data;
 
   return (
     <div className="space-y-4">
       <Card>
         <CardHeader
           title="Event summary"
-          subtitle={s ? `${s.event.name} · ${formatDate(s.event.date)}` : undefined}
+          subtitle={s ? `${s.event.name} · ${rangeLabel}` : undefined}
         />
         {s && (
           <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
@@ -220,6 +246,147 @@ export default function ReportsTab({ eventId }: { eventId: number }) {
           </div>
         )}
       </Card>
+
+      <Card>
+        <CardHeader
+          title="Daily breakdown"
+          subtitle="Per-day activity during the event"
+        />
+        {dailyOverview.isLoading ? (
+          <div className="flex justify-center py-10">
+            <Spinner />
+          </div>
+        ) : !overview || overview.days.length === 0 ? (
+          <EmptyState title="No day data" />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+                  <th className="pb-2 pr-4 font-medium">Day</th>
+                  <th className="pb-2 pr-4 font-medium">Date</th>
+                  <th className="pb-2 pr-4 font-medium">Spent</th>
+                  <th className="pb-2 pr-4 font-medium">Registered</th>
+                  <th className="pb-2 pr-4 font-medium">Tasks created</th>
+                  <th className="pb-2 pr-4 font-medium">Tasks due</th>
+                  <th className="pb-2 pr-4 font-medium">Tasks done</th>
+                  <th className="pb-2 font-medium">Vendors added</th>
+                </tr>
+              </thead>
+              <tbody>
+                {overview.days.map((day) => (
+                  <tr
+                    key={day.date}
+                    className={`cursor-pointer border-b border-slate-100 last:border-0 ${
+                      day.date === selectedDate
+                        ? "bg-indigo-50"
+                        : "hover:bg-slate-50"
+                    }`}
+                    onClick={() => setSelectedDate(day.date)}
+                  >
+                    <td className="py-3 pr-4 font-medium text-slate-800">
+                      {day.day}/{overview.totalDays}
+                    </td>
+                    <td className="py-3 pr-4 text-slate-600">
+                      {formatDate(day.date)}
+                    </td>
+                    <td className="py-3 pr-4 text-slate-800">
+                      {formatMoney(day.totalSpent)}
+                    </td>
+                    <td className="py-3 pr-4 text-slate-600">{day.registered}</td>
+                    <td className="py-3 pr-4 text-slate-600">
+                      {day.tasksCreated}
+                    </td>
+                    <td className="py-3 pr-4 text-slate-600">{day.tasksDue}</td>
+                    <td className="py-3 pr-4 text-emerald-600">
+                      {day.tasksCompleted}
+                    </td>
+                    <td className="py-3 text-slate-600">{day.vendorsAdded}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+
+      {selectedDate && (
+        <Card>
+          <CardHeader
+            title={`Day detail · ${formatDate(selectedDate)}`}
+            subtitle={
+              daily.data
+                ? `Day ${daily.data.day} of ${daily.data.totalDays}`
+                : undefined
+            }
+          />
+          {daily.isLoading ? (
+            <div className="flex justify-center py-10">
+              <Spinner />
+            </div>
+          ) : daily.error ? (
+            <EmptyState title="No data for this day" />
+          ) : (
+            daily.data && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                  {[
+                    { label: "Spent", value: formatMoney(daily.data.totalSpent) },
+                    { label: "Registered", value: String(daily.data.registered) },
+                    { label: "Approved", value: String(daily.data.approved) },
+                    { label: "Attended", value: String(daily.data.attended) },
+                    { label: "Absent", value: String(daily.data.absent) },
+                    { label: "Tasks done", value: String(daily.data.tasksCompleted) },
+                    { label: "Tasks due", value: String(daily.data.tasksDue) },
+                    { label: "Vendors added", value: String(daily.data.vendorsAdded) },
+                  ].map((item) => (
+                    <div key={item.label} className="rounded-lg bg-slate-50 p-3">
+                      <p className="text-xs text-slate-500">{item.label}</p>
+                      <p className="mt-0.5 text-lg font-bold text-slate-900">
+                        {item.value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                {daily.data.expenses.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+                          <th className="pb-2 pr-4 font-medium">Description</th>
+                          <th className="pb-2 pr-4 font-medium">Category</th>
+                          <th className="pb-2 pr-4 font-medium">Amount</th>
+                          <th className="pb-2 font-medium">Payment</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {daily.data.expenses.map((exp) => (
+                          <tr key={exp.id} className="border-b border-slate-100 last:border-0">
+                            <td className="py-3 pr-4 font-medium text-slate-800">
+                              {exp.description}
+                            </td>
+                            <td className="py-3 pr-4 text-slate-600">
+                              {exp.categoryName}
+                            </td>
+                            <td className="py-3 pr-4 text-slate-800">
+                              {formatMoney(exp.amount)}
+                            </td>
+                            <td className="py-3">
+                              <StatusBadge status={exp.paymentStatus} />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <EmptyState title="No expenses on this day" />
+                )}
+              </div>
+            )
+          )}
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>

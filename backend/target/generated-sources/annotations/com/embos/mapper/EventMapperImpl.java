@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-02T20:17:05+0630",
-    comments = "version: 1.6.2, compiler: javac, environment: Java 19.0.1 (Oracle Corporation)"
+    date = "2026-08-05T20:59:42+0630",
+    comments = "version: 1.6.2, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
 )
 @Component
 public class EventMapperImpl implements EventMapper {
@@ -27,6 +27,7 @@ public class EventMapperImpl implements EventMapper {
         String name = null;
         String description = null;
         LocalDate date = null;
+        Integer durationInDays = null;
         String venue = null;
         Integer capacity = null;
         LocalDate registrationDeadline = null;
@@ -40,6 +41,7 @@ public class EventMapperImpl implements EventMapper {
         name = event.getName();
         description = event.getDescription();
         date = event.getDate();
+        durationInDays = event.getDurationInDays();
         venue = event.getVenue();
         capacity = event.getCapacity();
         registrationDeadline = event.getRegistrationDeadline();
@@ -50,7 +52,7 @@ public class EventMapperImpl implements EventMapper {
         createdAt = event.getCreatedAt();
         updatedAt = event.getUpdatedAt();
 
-        EventDtos.Response response = new EventDtos.Response( id, name, description, date, venue, capacity, registrationDeadline, status, registrationToken, organizerName, createdAt, updatedAt );
+        EventDtos.Response response = new EventDtos.Response( id, name, description, date, durationInDays, venue, capacity, registrationDeadline, status, registrationToken, organizerName, createdAt, updatedAt );
 
         return response;
     }

@@ -13,11 +13,16 @@ import com.embos.mapper.EventMapper;
 import com.embos.repository.EventRepository;
 import com.embos.repository.GuestRepository;
 import com.embos.repository.TaskRepository;
+import com.embos.repository.VendorRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +37,7 @@ public class ReportService {
     private final StaffService staffService;
     private final TaskRepository taskRepository;
     private final GuestRepository guestRepository;
+    private final VendorRepository vendorRepository;
     private final EventRepository eventRepository;
     private final EventMapper eventMapper;
 
@@ -46,6 +52,8 @@ public class ReportService {
             case "vendors" -> vendorReport(managedEvent);
             case "staff" -> staffReport(managedEvent);
             case "attendance" -> attendanceReport(managedEvent);
+            case "daily" -> daily(managedEvent, LocalDate.now());
+            case "daily-overview" -> dailyOverview(managedEvent);
             default -> throw new BadRequestException("Unknown report type: " + type);
         };
     }
@@ -111,5 +119,83 @@ public class ReportService {
                 guestRepository.countByEventIdAndStatus(event.getId(), GuestStatus.ATTENDED),
                 guestRepository.countByEventIdAndStatus(event.getId(), GuestStatus.ABSENT),
                 byType);
+    }
+
+    @Transactional(readOnly = true)
+    public ReportDtos.DailyReport daily(Event event, LocalDate date) {
+        Event managedEvent = eventRepository.findById(event.getId())
+                .orElseThrow(() -> new NotFoundException("Event not found"));
+        int totalDays = duration(managedEvent);
+        LocalDate start = managedEvent.getDate();
+        LocalDate end = start.plusDays(totalDays - 1L);
+        if (date.isBefore(start) || date.isAfter(end)) {
+            throw new BadRequestException(
+                    "Date must be within the event's " + totalDays + "-day range (" + start + " to " + end + ")");
+        }
+        LocalDateTime dayStart = date.atStartOfDay();
+        LocalDateTime dayEnd = date.plusDays(1).atStartOfDay();
+        List<ExpenseDtos.Response> expenses = expenseService.list(managedEvent).stream()
+                .filter(e -> e.expenseDate().equals(date))
+                .toList();
+        BigDecimal totalSpent = expenses.stream()
+                .map(ExpenseDtos.Response::amount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        long dayNumber = ChronoUnit.DAYS.between(start, date) + 1;
+        return new ReportDtos.DailyReport(
+                eventMapper.toResponse(managedEvent),
+                date,
+                (int) dayNumber,
+                totalDays,
+                expenses,
+                totalSpent,
+                expenses.size(),
+                guestRepository.countByEventIdAndCreatedAtBetween(event.getId(), dayStart, dayEnd),
+                guestRepository.countByEventIdAndStatusAndUpdatedAtBetween(
+                        event.getId(), GuestStatus.APPROVED, dayStart, dayEnd),
+                guestRepository.countByEventIdAndStatusAndUpdatedAtBetween(
+                        event.getId(), GuestStatus.ATTENDED, dayStart, dayEnd),
+                guestRepository.countByEventIdAndStatusAndUpdatedAtBetween(
+                        event.getId(), GuestStatus.ABSENT, dayStart, dayEnd),
+                guestRepository.countByEventIdAndStatusAndUpdatedAtBetween(
+                        event.getId(), GuestStatus.REJECTED, dayStart, dayEnd),
+                taskRepository.countByEventIdAndCreatedAtBetween(event.getId(), dayStart, dayEnd),
+                taskRepository.countByEventIdAndDueDate(event.getId(), date),
+                taskRepository.countByEventIdAndStatusAndCompletedAtBetween(
+                        event.getId(), TaskStatus.DONE, dayStart, dayEnd),
+                vendorRepository.countByEventIdAndCreatedAtBetween(event.getId(), dayStart, dayEnd));
+    }
+
+    @Transactional(readOnly = true)
+    public ReportDtos.DailyOverview dailyOverview(Event event) {
+        Event managedEvent = eventRepository.findById(event.getId())
+                .orElseThrow(() -> new NotFoundException("Event not found"));
+        int totalDays = duration(managedEvent);
+        List<ReportDtos.DailyDay> days = new ArrayList<>();
+        LocalDate start = managedEvent.getDate();
+        for (int i = 0; i < totalDays; i++) {
+            LocalDate date = start.plusDays(i);
+            LocalDateTime dayStart = date.atStartOfDay();
+            LocalDateTime dayEnd = date.plusDays(1).atStartOfDay();
+            BigDecimal totalSpent = expenseService.list(managedEvent).stream()
+                    .filter(e -> e.expenseDate().equals(date))
+                    .map(ExpenseDtos.Response::amount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            days.add(new ReportDtos.DailyDay(
+                    i + 1,
+                    date,
+                    totalSpent,
+                    guestRepository.countByEventIdAndCreatedAtBetween(event.getId(), dayStart, dayEnd),
+                    taskRepository.countByEventIdAndCreatedAtBetween(event.getId(), dayStart, dayEnd),
+                    taskRepository.countByEventIdAndDueDate(event.getId(), date),
+                    taskRepository.countByEventIdAndStatusAndCompletedAtBetween(
+                            event.getId(), TaskStatus.DONE, dayStart, dayEnd),
+                    vendorRepository.countByEventIdAndCreatedAtBetween(event.getId(), dayStart, dayEnd)));
+        }
+        return new ReportDtos.DailyOverview(eventMapper.toResponse(managedEvent), totalDays, days);
+    }
+
+    private int duration(Event event) {
+        Integer durationInDays = event.getDurationInDays();
+        return durationInDays == null ? 1 : durationInDays;
     }
 }

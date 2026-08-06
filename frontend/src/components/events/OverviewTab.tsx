@@ -48,7 +48,17 @@ export default function OverviewTab({ eventId }: { eventId: number }) {
   }
 
   const details: Array<[string, string]> = [
-    ["Date", formatDate(event.date)],
+    [
+      "Date",
+      (event.durationInDays ?? 1) > 1
+        ? `${formatDate(event.date)} – ${formatDate(
+            new Date(
+              new Date(event.date).getTime() +
+                ((event.durationInDays ?? 1) - 1) * 86400000
+            ).toISOString().slice(0, 10)
+          )} (${event.durationInDays} days)`
+        : formatDate(event.date),
+    ],
     ["Venue", event.venue],
     ["Capacity", String(event.capacity)],
     [

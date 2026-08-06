@@ -54,6 +54,7 @@ public class EventService {
                 .name(request.name().trim())
                 .description(request.description())
                 .date(request.date())
+                .durationInDays(duration(request.durationInDays()))
                 .venue(request.venue().trim())
                 .capacity(request.capacity())
                 .registrationDeadline(request.registrationDeadline())
@@ -71,6 +72,7 @@ public class EventService {
         event.setName(request.name().trim());
         event.setDescription(request.description());
         event.setDate(request.date());
+        event.setDurationInDays(duration(request.durationInDays()));
         event.setVenue(request.venue().trim());
         event.setCapacity(request.capacity());
         event.setRegistrationDeadline(request.registrationDeadline());
@@ -131,6 +133,10 @@ public class EventService {
         if (request.registrationDeadline() != null && request.registrationDeadline().isAfter(request.date())) {
             throw new BadRequestException("Registration deadline must be on or before the event date");
         }
+    }
+
+    private int duration(Integer durationInDays) {
+        return durationInDays == null ? 1 : durationInDays;
     }
 
     private EventStatus parseStatus(String status) {

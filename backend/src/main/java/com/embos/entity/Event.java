@@ -51,6 +51,8 @@ public class Event {
     @Column(nullable = false)
     private LocalDate date;
 
+    private Integer durationInDays;
+
     @Column(nullable = false, length = 200)
     private String venue;
 

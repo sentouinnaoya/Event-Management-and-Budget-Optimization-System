@@ -4,13 +4,14 @@ import com.embos.dto.TaskDtos;
 import com.embos.entity.Staff;
 import com.embos.entity.Task;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import javax.annotation.processing.Generated;
 import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-02T20:17:05+0630",
-    comments = "version: 1.6.2, compiler: javac, environment: Java 19.0.1 (Oracle Corporation)"
+    date = "2026-08-05T21:00:37+0630",
+    comments = "version: 1.6.2, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
 )
 @Component
 public class TaskMapperImpl implements TaskMapper {
@@ -29,6 +30,7 @@ public class TaskMapperImpl implements TaskMapper {
         LocalDate dueDate = null;
         String priority = null;
         String status = null;
+        LocalDateTime completedAt = null;
 
         assignedStaffId = taskAssignedStaffId( task );
         assignedStaffName = taskAssignedStaffName( task );
@@ -42,8 +44,9 @@ public class TaskMapperImpl implements TaskMapper {
         if ( task.getStatus() != null ) {
             status = task.getStatus().name();
         }
+        completedAt = task.getCompletedAt();
 
-        TaskDtos.Response response = new TaskDtos.Response( id, title, description, assignedStaffId, assignedStaffName, dueDate, priority, status );
+        TaskDtos.Response response = new TaskDtos.Response( id, title, description, assignedStaffId, assignedStaffName, dueDate, priority, status, completedAt );
 
         return response;
     }

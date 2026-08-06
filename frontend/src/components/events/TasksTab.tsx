@@ -130,6 +130,7 @@ export default function TasksTab({ eventId }: { eventId: number }) {
                 <th className="pb-2 pr-4 font-medium">Due</th>
                 <th className="pb-2 pr-4 font-medium">Priority</th>
                 <th className="pb-2 pr-4 font-medium">Status</th>
+                <th className="pb-2 pr-4 font-medium">Completed</th>
                 <th className="pb-2 font-medium" />
               </tr>
             </thead>
@@ -172,6 +173,11 @@ export default function TasksTab({ eventId }: { eventId: number }) {
                       <option value="IN_PROGRESS">In progress</option>
                       <option value="DONE">Done</option>
                     </Select>
+                  </td>
+                  <td className="py-3 pr-4 text-slate-600">
+                    {t.status === "DONE" && t.completedAt
+                      ? formatDate(t.completedAt)
+                      : "—"}
                   </td>
                   <td className="py-3 text-right">
                     <div className="flex justify-end gap-2">

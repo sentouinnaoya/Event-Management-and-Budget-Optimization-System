@@ -4,6 +4,7 @@ import com.embos.entity.Guest;
 import com.embos.entity.enums.GuestStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface GuestRepository extends JpaRepository<Guest, Long> {
@@ -17,6 +18,10 @@ public interface GuestRepository extends JpaRepository<Guest, Long> {
     long countByEventId(Long eventId);
 
     long countByEventIdAndStatus(Long eventId, GuestStatus status);
+
+    long countByEventIdAndCreatedAtBetween(Long eventId, LocalDateTime start, LocalDateTime end);
+
+    long countByEventIdAndStatusAndUpdatedAtBetween(Long eventId, GuestStatus status, LocalDateTime start, LocalDateTime end);
 
     List<Guest> findAllByEventIdAndStatusOrderByCreatedAtAsc(Long eventId, GuestStatus status);
 }

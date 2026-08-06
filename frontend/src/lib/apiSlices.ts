@@ -5,6 +5,8 @@ import type {
   BudgetCategory,
   BudgetSummary,
   CategoryInput,
+  DailyOverview,
+  DailyReport,
   Dashboard,
   Event,
   EventInput,
@@ -353,6 +355,17 @@ export const reportApi = baseApi.injectEndpoints({
       query: (eventId) => `/events/${eventId}/reports/attendance`,
       providesTags: ["Reports", "Guests"],
     }),
+    dailyReport: b.query<DailyReport, { eventId: number; date: string }>({
+      query: ({ eventId, date }) => ({
+        url: `/events/${eventId}/reports/daily`,
+        params: { date },
+      }),
+      providesTags: ["Reports"],
+    }),
+    dailyOverview: b.query<DailyOverview, number>({
+      query: (eventId) => `/events/${eventId}/reports/daily-overview`,
+      providesTags: ["Reports"],
+    }),
   }),
 });
 
@@ -452,6 +465,8 @@ export const {
   useVendorsReportQuery,
   useStaffReportQuery,
   useAttendanceReportQuery,
+  useDailyReportQuery,
+  useDailyOverviewQuery,
 } = reportApi;
 
 export const { useGetDashboardQuery } = dashboardApi;

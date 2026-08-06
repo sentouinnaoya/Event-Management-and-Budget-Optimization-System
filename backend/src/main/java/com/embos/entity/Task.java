@@ -59,6 +59,8 @@ public class Task {
     @Column(nullable = false, length = 20)
     private TaskStatus status;
 
+    private LocalDateTime completedAt;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 }

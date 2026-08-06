@@ -37,6 +37,7 @@ public class TaskService {
         Staff staff = request.assignedStaffId() == null
                 ? null
                 : staffService.getStaff(event, request.assignedStaffId());
+        TaskStatus status = parseStatus(request.status());
         Task task = Task.builder()
                 .event(event)
                 .title(request.title().trim())
@@ -44,7 +45,8 @@ public class TaskService {
                 .assignedStaff(staff)
                 .dueDate(request.dueDate())
                 .priority(parsePriority(request.priority()))
-                .status(parseStatus(request.status()))
+                .status(status)
+                .completedAt(status == TaskStatus.DONE ? LocalDateTime.now() : null)
                 .createdAt(LocalDateTime.now())
                 .build();
         return taskMapper.toResponse(taskRepository.save(task));
@@ -61,14 +63,14 @@ public class TaskService {
         task.setAssignedStaff(staff);
         task.setDueDate(request.dueDate());
         task.setPriority(parsePriority(request.priority()));
-        task.setStatus(parseStatus(request.status()));
+        applyStatus(task, parseStatus(request.status()));
         return taskMapper.toResponse(taskRepository.save(task));
     }
 
     @Transactional
     public TaskDtos.Response updateStatus(Event event, Long taskId, String status) {
         Task task = getTask(event, taskId);
-        task.setStatus(parseStatus(status));
+        applyStatus(task, parseStatus(status));
         return taskMapper.toResponse(taskRepository.save(task));
     }
 
@@ -101,6 +103,17 @@ public class TaskService {
             return TaskStatus.valueOf(status.toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new BadRequestException("Invalid task status: " + status);
+        }
+    }
+
+    private void applyStatus(Task task, TaskStatus status) {
+        task.setStatus(status);
+        if (status == TaskStatus.DONE) {
+            if (task.getCompletedAt() == null) {
+                task.setCompletedAt(LocalDateTime.now());
+            }
+        } else {
+            task.setCompletedAt(null);
         }
     }
 }

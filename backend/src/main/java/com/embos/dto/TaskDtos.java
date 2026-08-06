@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public final class TaskDtos {
 
@@ -24,7 +25,8 @@ public final class TaskDtos {
             String assignedStaffName,
             LocalDate dueDate,
             String priority,
-            String status) {
+            String status,
+            LocalDateTime completedAt) {
     }
 
     public record StatusRequest(
