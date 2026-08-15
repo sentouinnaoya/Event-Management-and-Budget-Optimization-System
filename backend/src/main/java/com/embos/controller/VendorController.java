@@ -43,7 +43,7 @@ public class VendorController {
             @PathVariable Long eventId,
             @Valid @RequestBody VendorDtos.Request request) {
         Event event = eventService.getOwnedEvent(eventId, principal.user());
-        return ResponseEntity.status(HttpStatus.CREATED).body(vendorService.create(event, request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(vendorService.create(event, request, principal.user().getFullName()));
     }
 
     @PutMapping("/{vendorId}")
@@ -53,7 +53,7 @@ public class VendorController {
             @PathVariable Long vendorId,
             @Valid @RequestBody VendorDtos.Request request) {
         Event event = eventService.getOwnedEvent(eventId, principal.user());
-        return ResponseEntity.ok(vendorService.update(event, vendorId, request));
+        return ResponseEntity.ok(vendorService.update(event, vendorId, request, principal.user().getFullName()));
     }
 
     @DeleteMapping("/{vendorId}")
@@ -62,7 +62,7 @@ public class VendorController {
             @PathVariable Long eventId,
             @PathVariable Long vendorId) {
         Event event = eventService.getOwnedEvent(eventId, principal.user());
-        vendorService.delete(event, vendorId);
+        vendorService.delete(event, vendorId, principal.user().getFullName());
         return ResponseEntity.noContent().build();
     }
 }

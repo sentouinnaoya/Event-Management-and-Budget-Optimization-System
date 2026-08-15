@@ -10,6 +10,7 @@ import { useLoginMutation } from "../../lib/apiSlices";
 import { useAppDispatch, useAppSelector } from "../../lib/hooks";
 import { setCredentials } from "../../features/auth/authSlice";
 import { Button, FieldError, Input, Label, apiError } from "../../components/ui";
+import AuthShell from "../../components/AuthShell";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -45,15 +46,17 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm">
+    <AuthShell>
+      <div className="rounded-2xl bg-white p-8 shadow-sm">
         <div className="mb-8 text-center">
-          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-xl font-bold text-white">
+          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-xl font-bold text-white lg:hidden">
             E
           </span>
-          <h1 className="mt-4 text-2xl font-bold text-slate-900">EMBOS</h1>
+          <h1 className="mt-4 text-2xl font-bold text-slate-900">
+            Welcome back
+          </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Event Management & Budget Optimization
+            Sign in to your organizer account
           </p>
         </div>
 
@@ -62,7 +65,6 @@ export default function LoginPage() {
             <Label required>Email</Label>
             <Input
               type="email"
-              placeholder="you@example.com"
               invalid={!!errors.email}
               {...register("email")}
             />
@@ -72,7 +74,6 @@ export default function LoginPage() {
             <Label required>Password</Label>
             <Input
               type="password"
-              placeholder="••••••••"
               invalid={!!errors.password}
               {...register("password")}
             />
@@ -100,6 +101,6 @@ export default function LoginPage() {
           </Link>
         </p>
       </div>
-    </div>
+    </AuthShell>
   );
 }

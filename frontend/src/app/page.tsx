@@ -1,44 +1,55 @@
 "use client";
 
 import Link from "next/link";
+import {
+  ArrowRight,
+  BarChart3,
+  CalendarClock,
+  Handshake,
+  Sparkles,
+  Ticket,
+  Users,
+  Wallet,
+} from "lucide-react";
 import { useAppSelector } from "../lib/hooks";
+import { BrandMark } from "../components/ui";
 
 const features = [
   {
     title: "Budget engine",
     description:
       "Allocate budgets by category, track spending in real time, and get alerted before you go over.",
-    icon: "💰",
+    icon: Wallet,
   },
   {
     title: "Guests & registration",
     description:
-      "Public registration links, approval workflows, and attendance tracking for every event.",
-    icon: "🎟️",
+      "Public registration pages, approval workflows, and attendance tracking for every event.",
+    icon: Ticket,
   },
   {
     title: "Vendors & staff",
     description:
       "Manage vendors, service agreements, staff roles, and task assignments from one place.",
-    icon: "🤝",
+    icon: Handshake,
   },
   {
     title: "Reports & insights",
     description:
       "Budget, expense, attendance, and staff performance reports that update as your event grows.",
-    icon: "📊",
+    icon: BarChart3,
   },
   {
     title: "Team collaboration",
     description:
       "Organizer and admin roles with clear separation, so everyone works on the right things.",
-    icon: "👥",
+    icon: Users,
   },
   {
     title: "Status tracking",
     description:
       "Follow every event from draft to published, ongoing, and completed — all in one timeline.",
-    icon: "🗓️",
+    icon: CalendarClock,
   },
 ];
 
@@ -59,7 +70,7 @@ const steps = [
     step: "03",
     title: "Publish & register",
     description:
-      "Share the registration link, approve guests, and track expenses as they happen.",
+      "Publish the event, approve guests, and track expenses as they happen.",
   },
   {
     step: "04",
@@ -78,9 +89,7 @@ export default function Home() {
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
-              E
-            </span>
+            <BrandMark size="sm" />
             <span className="text-base font-semibold">EMBOS</span>
           </Link>
           <nav className="flex items-center gap-3">
@@ -93,6 +102,12 @@ export default function Home() {
               </Link>
             ) : (
               <>
+                <Link
+                  href="/browse"
+                  className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900"
+                >
+                  Browse events
+                </Link>
                 <Link
                   href="/login"
                   className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900"
@@ -111,55 +126,68 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="mx-auto max-w-6xl px-4 pb-20 pt-20 sm:px-6 sm:pt-28">
-        <div className="mx-auto max-w-3xl text-center">
-          <span className="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700">
-            Plan · Organize · Execute · Monitor
-          </span>
-          <h1 className="mt-6 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
-            Manage events and budgets in{" "}
-            <span className="text-indigo-600">one place</span>
-          </h1>
-          <p className="mt-6 text-lg text-slate-600">
-            EMBOS is an event management and budget optimization system that
-            helps you plan events, control spending, manage guests and vendors,
-            and stay on top of every detail.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href={authed ? "/dashboard" : "/register"}
-              className="rounded-lg bg-indigo-600 px-6 py-3 text-sm font-medium text-white shadow-sm hover:bg-indigo-500"
-            >
-              {authed ? "Go to dashboard" : "Start for free"}
-            </Link>
-            <Link
-              href="/login"
-              className="rounded-lg border border-slate-300 px-6 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              Sign in
-            </Link>
+      <section className="relative overflow-hidden bg-gradient-to-b from-indigo-50 via-white to-white">
+        <div className="pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full bg-indigo-200/40 blur-3xl" />
+        <div className="pointer-events-none absolute -right-24 top-32 h-96 w-96 rounded-full bg-purple-200/40 blur-3xl" />
+
+        <div className="relative mx-auto max-w-6xl px-4 pb-20 pt-20 sm:px-6 sm:pt-28">
+          <div className="mx-auto max-w-3xl text-center">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700">
+              <Sparkles className="h-3.5 w-3.5" />
+              Plan · Organize · Execute · Monitor
+            </span>
+            <h1 className="mt-6 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+              Manage events and budgets in{" "}
+              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                one place
+              </span>
+            </h1>
+            <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-600">
+              EMBOS is an event management and budget optimization system that
+              helps you plan events, control spending, manage guests and
+              vendors, and stay on top of every detail.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href={authed ? "/dashboard" : "/register"}
+                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-3 text-sm font-medium text-white shadow-sm transition-all hover:bg-indigo-500 active:scale-[0.98]"
+              >
+                {authed ? "Go to dashboard" : "Start for free"}
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/browse"
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 active:scale-[0.98]"
+              >
+                <Ticket className="h-4 w-4" />
+                Browse events
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((f) => (
-            <div
-              key={f.title}
-              className="rounded-2xl border border-slate-200 bg-slate-50/50 p-6"
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-xl shadow-sm">
-                {f.icon}
-              </span>
-              <h3 className="mt-4 text-base font-semibold text-slate-900">
-                {f.title}
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                {f.description}
-              </p>
-            </div>
-          ))}
+          {features.map((f) => {
+            const Icon = f.icon;
+            return (
+              <div
+                key={f.title}
+                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+              >
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <h3 className="mt-4 text-base font-semibold text-slate-900">
+                  {f.title}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                  {f.description}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -174,10 +202,10 @@ export default function Home() {
           <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {steps.map((s) => (
               <div key={s.step} className="relative">
-                <span className="text-3xl font-bold text-indigo-200">
+                <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-sm font-bold text-white shadow-sm">
                   {s.step}
                 </span>
-                <h3 className="mt-2 text-base font-semibold text-slate-900">
+                <h3 className="mt-4 text-base font-semibold text-slate-900">
                   {s.title}
                 </h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-600">
@@ -190,7 +218,7 @@ export default function Home() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-        <div className="rounded-3xl bg-indigo-600 px-6 py-14 text-center sm:px-12">
+        <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 to-purple-700 px-6 py-14 text-center sm:px-12">
           <h2 className="text-3xl font-bold tracking-tight text-white">
             Ready to plan your next event?
           </h2>
@@ -201,15 +229,17 @@ export default function Home() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               href={authed ? "/dashboard" : "/register"}
-              className="rounded-lg bg-white px-6 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-50"
+              className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-semibold text-indigo-700 transition-all hover:bg-indigo-50 active:scale-[0.98]"
             >
               {authed ? "Go to dashboard" : "Create an account"}
+              <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              href="/login"
-              className="rounded-lg border border-indigo-300 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-500"
+              href="/browse"
+              className="inline-flex items-center gap-2 rounded-lg border border-indigo-300 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-white/10 active:scale-[0.98]"
             >
-              Sign in
+              <Ticket className="h-4 w-4" />
+              Browse events
             </Link>
           </div>
         </div>
@@ -218,10 +248,16 @@ export default function Home() {
       <footer className="border-t border-slate-200 py-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 text-sm text-slate-500 sm:flex-row sm:px-6">
           <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-600 text-xs font-bold text-white">
-              E
-            </span>
+            <BrandMark size="sm" />
             <span className="font-medium text-slate-700">EMBOS</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link href="/browse" className="hover:text-slate-700">
+              Browse events
+            </Link>
+            <Link href="/login" className="hover:text-slate-700">
+              Sign in
+            </Link>
           </div>
           <p>Event Management &amp; Budget Optimization System</p>
         </div>

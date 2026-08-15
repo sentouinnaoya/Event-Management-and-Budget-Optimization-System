@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,10 +14,13 @@ import {
   YAxis,
 } from "recharts";
 import { categorySchema, type CategoryInputZ } from "../../lib/schemas";
+import type { AiInsight } from "../../lib/types";
 import {
   useAddCategoryMutation,
   useBudgetSummaryQuery,
   useDeleteCategoryMutation,
+  useGenerateBudgetInsightsMutation,
+  useGetBudgetInsightsQuery,
 } from "../../lib/apiSlices";
 import {
   Button,
@@ -38,6 +41,26 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
   const [addCategory, { isLoading: adding }] = useAddCategoryMutation();
   const [removeCategory] = useDeleteCategoryMutation();
   const [error, setError] = useState<string | null>(null);
+  const { data: insights, isLoading: loadingInsights, refetch } =
+    useGetBudgetInsightsQuery(eventId);
+  const [generateInsights] = useGenerateBudgetInsightsMutation();
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [localGenerating, setLocalGenerating] = useState(false);
+  const generating = localGenerating || (insights?.generating ?? false);
+
+  useEffect(() => {
+    if (!generating) return;
+    const id = setInterval(() => {
+      refetch();
+    }, 3000);
+    return () => clearInterval(id);
+  }, [generating, refetch]);
+
+  useEffect(() => {
+    if (localGenerating && insights && !insights.generating) {
+      setLocalGenerating(false);
+    }
+  }, [insights, localGenerating]);
   const {
     register,
     handleSubmit,
@@ -69,6 +92,17 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
       setError(null);
     } catch (e) {
       setError(apiError(e));
+    }
+  }
+
+  async function onGenerate() {
+    try {
+      setAiError(null);
+      setLocalGenerating(true);
+      await generateInsights(eventId).unwrap();
+    } catch (e) {
+      setLocalGenerating(false);
+      setAiError(apiError(e));
     }
   }
 
@@ -158,7 +192,6 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
                 type="number"
                 step="0.01"
                 min={0}
-                placeholder="5000"
                 invalid={!!errors.allocatedAmount}
                 {...register("allocatedAmount")}
               />
@@ -170,7 +203,6 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
                 type="number"
                 min={0}
                 max={100}
-                placeholder="80"
                 invalid={!!errors.alertThresholdPct}
                 {...register("alertThresholdPct")}
               />
@@ -294,18 +326,128 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
         )}
       </Card>
 
-      {data.recommendations.length > 0 && (
-        <Card className="border-amber-200 bg-amber-50/50">
-          <CardHeader title="Recommendations" />
-          <ul className="space-y-1.5 text-sm text-slate-700">
-            {data.recommendations.map((r, i) => (
-              <li key={i} className="flex gap-2">
-                <span className="text-amber-600">●</span>
-                <span>{r}</span>
-              </li>
+      <Card className="border-indigo-200 bg-indigo-50/40">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <CardHeader
+              title="Recommendation"
+              subtitle="Analyzes the organizer's budget decisions and recommends options"
+            />
+            <p className="text-xs text-slate-500">
+              {insights?.generatedAt
+                ? `Last generated ${new Date(insights.generatedAt).toLocaleString()}`
+                : "No analysis generated yet"}
+            </p>
+          </div>
+          <Button onClick={onGenerate} loading={generating}>
+            {generating ? "Generating…" : "Generate with AI"}
+          </Button>
+        </div>
+
+        {generating && (
+          <p className="mt-2 text-xs font-medium text-indigo-600">
+            AI is analyzing your budget decisions — this usually takes about
+            30 seconds.
+          </p>
+        )}
+
+        {aiError && (
+          <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+            {aiError}
+          </div>
+        )}
+
+        {loadingInsights ? (
+          <div className="flex justify-center py-10">
+            <Spinner />
+          </div>
+        ) : insights && insights.insights.length > 0 ? (
+          <div className="mt-4 space-y-4">
+            {insights.insights.map((insight, i) => (
+              <InsightCard key={i} insight={insight} />
             ))}
-          </ul>
-        </Card>
+          </div>
+        ) : (
+          <div className="mt-4">
+            {generating ? (
+              <div className="flex items-center justify-center gap-2 py-8 text-sm text-slate-500">
+                <Spinner /> Generating recommendations…
+              </div>
+            ) : (
+              <EmptyState
+                title="No analysis yet"
+                description={
+                  insights &&
+                  insights.actionCount === 0 &&
+                  data.categories.length === 0
+                    ? "The AI analyzes your budget decisions once you've made some — add budget categories, vendors, or expenses, then click Generate with AI."
+                    : "Click Generate with AI to get budget optimization recommendations."
+                }
+              />
+            )}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+function InsightCard({ insight }: { insight: AiInsight }) {
+  const tone =
+    insight.severity === "CRITICAL"
+      ? "border-red-200 bg-red-50"
+      : insight.severity === "WARNING"
+      ? "border-amber-200 bg-amber-50"
+      : "border-emerald-200 bg-emerald-50";
+  const badge =
+    insight.severity === "CRITICAL"
+      ? "bg-red-100 text-red-700"
+      : insight.severity === "WARNING"
+      ? "bg-amber-100 text-amber-700"
+      : "bg-emerald-100 text-emerald-700";
+
+  return (
+    <div className={`rounded-lg border p-4 ${tone}`}>
+      <div className="flex items-start justify-between gap-2">
+        <p className="font-semibold text-slate-900">{insight.topic}</p>
+        <span
+          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${badge}`}
+        >
+          {insight.severity}
+        </span>
+      </div>
+      <p className="mt-1 text-sm text-slate-700">{insight.summary}</p>
+      {insight.options.length > 0 && (
+        <ul className="mt-3 space-y-2">
+          {insight.options.map((o, i) => (
+            <li key={i} className="flex gap-2 text-sm">
+              <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700">
+                {String.fromCharCode(65 + i)}
+              </span>
+              <div>
+                <p className="font-medium text-slate-800">
+                  {o.label}
+                  {o.label === insight.recommendedOption && (
+                    <span className="ml-1.5 text-xs font-semibold text-indigo-600">
+                      ✓ Recommended
+                    </span>
+                  )}
+                </p>
+                {o.description && (
+                  <p className="text-slate-600">{o.description}</p>
+                )}
+                {o.estimatedImpact && (
+                  <p className="text-emerald-700">{o.estimatedImpact}</p>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      {insight.impactEstimate && (
+        <p className="mt-3 border-t border-slate-200 pt-2 text-sm font-medium text-slate-700">
+          Expected impact: {insight.impactEstimate}
+        </p>
       )}
     </div>
   );

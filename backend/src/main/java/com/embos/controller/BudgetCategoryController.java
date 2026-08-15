@@ -44,7 +44,7 @@ public class BudgetCategoryController {
             @Valid @RequestBody BudgetDtos.CategoryRequest request) {
         Event event = eventService.getOwnedEvent(eventId, principal.user());
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(budgetService.addCategory(event, request));
+                .body(budgetService.addCategory(event, request, principal.user().getFullName()));
     }
 
     @PutMapping("/{categoryId}")
@@ -54,7 +54,7 @@ public class BudgetCategoryController {
             @PathVariable Long categoryId,
             @Valid @RequestBody BudgetDtos.CategoryRequest request) {
         Event event = eventService.getOwnedEvent(eventId, principal.user());
-        return ResponseEntity.ok(budgetService.updateCategory(event, categoryId, request));
+        return ResponseEntity.ok(budgetService.updateCategory(event, categoryId, request, principal.user().getFullName()));
     }
 
     @DeleteMapping("/{categoryId}")
@@ -63,7 +63,7 @@ public class BudgetCategoryController {
             @PathVariable Long eventId,
             @PathVariable Long categoryId) {
         Event event = eventService.getOwnedEvent(eventId, principal.user());
-        budgetService.deleteCategory(event, categoryId);
+        budgetService.deleteCategory(event, categoryId, principal.user().getFullName());
         return ResponseEntity.noContent().build();
     }
 }

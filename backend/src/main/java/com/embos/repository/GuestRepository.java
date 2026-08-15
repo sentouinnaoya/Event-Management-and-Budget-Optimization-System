@@ -24,4 +24,6 @@ public interface GuestRepository extends JpaRepository<Guest, Long> {
     long countByEventIdAndStatusAndUpdatedAtBetween(Long eventId, GuestStatus status, LocalDateTime start, LocalDateTime end);
 
     List<Guest> findAllByEventIdAndStatusOrderByCreatedAtAsc(Long eventId, GuestStatus status);
+
+    boolean existsByRegistrationCode(String registrationCode);
 }

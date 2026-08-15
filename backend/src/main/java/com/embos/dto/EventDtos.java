@@ -37,7 +37,8 @@ public final class EventDtos {
     }
 
     public record StatusRequest(
-            @NotBlank String status) {
+            @NotBlank String status,
+            String reason) {
     }
 
     private EventDtos() {

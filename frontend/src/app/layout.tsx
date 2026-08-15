@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 import Providers from "../components/providers";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "EMBOS - Event Management & Budget Optimization",
@@ -15,8 +23,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-slate-100 text-slate-900 antialiased">
+      <body className={`${inter.variable} min-h-screen bg-slate-50 text-slate-900 antialiased`}>
         <Providers>{children}</Providers>
+        <Toaster
+          richColors
+          position="bottom-center"
+          duration={3000}
+          closeButton
+        />
       </body>
     </html>
   );

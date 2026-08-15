@@ -117,6 +117,7 @@ export default function GuestsTab({ eventId }: { eventId: number }) {
                   <th className="pb-2 pr-4 font-medium">Name</th>
                   <th className="pb-2 pr-4 font-medium">Email</th>
                   <th className="pb-2 pr-4 font-medium">Phone</th>
+                  <th className="pb-2 pr-4 font-medium">Ticket</th>
                   <th className="pb-2 pr-4 font-medium">Type</th>
                   <th className="pb-2 pr-4 font-medium">Status</th>
                   <th className="pb-2 font-medium">Actions</th>
@@ -133,6 +134,15 @@ export default function GuestsTab({ eventId }: { eventId: number }) {
                     </td>
                     <td className="py-3 pr-4 text-slate-600">{g.email}</td>
                     <td className="py-3 pr-4 text-slate-600">{g.phone || "—"}</td>
+                    <td className="py-3 pr-4">
+                      {g.registrationCode ? (
+                        <span className="font-mono text-xs font-semibold tracking-wider text-slate-700">
+                          {g.registrationCode.slice(0, 4)}-{g.registrationCode.slice(4)}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
                     <td className="py-3 pr-4">
                       <StatusBadge status={g.guestType} />
                     </td>

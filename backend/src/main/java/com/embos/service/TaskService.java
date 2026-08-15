@@ -6,11 +6,13 @@ import com.embos.entity.Staff;
 import com.embos.entity.Task;
 import com.embos.entity.enums.Priority;
 import com.embos.entity.enums.TaskStatus;
+import com.embos.event.TaskAssignedEvent;
 import com.embos.exception.BadRequestException;
 import com.embos.exception.NotFoundException;
 import com.embos.mapper.TaskMapper;
 import com.embos.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +26,7 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final StaffService staffService;
     private final TaskMapper taskMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public List<TaskDtos.Response> list(Event event) {
@@ -49,7 +52,13 @@ public class TaskService {
                 .completedAt(status == TaskStatus.DONE ? LocalDateTime.now() : null)
                 .createdAt(LocalDateTime.now())
                 .build();
-        return taskMapper.toResponse(taskRepository.save(task));
+        Task saved = taskRepository.save(task);
+        if (saved.getAssignedStaff() != null) {
+            eventPublisher.publishEvent(new TaskAssignedEvent(
+                    event.getId(), event.getOrganizer().getId(), event.getName(),
+                    saved.getTitle(), saved.getAssignedStaff().getName()));
+        }
+        return taskMapper.toResponse(saved);
     }
 
     @Transactional

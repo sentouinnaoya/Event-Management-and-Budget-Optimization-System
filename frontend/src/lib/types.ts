@@ -8,6 +8,24 @@ export interface UserInfo {
   createdAt?: string;
 }
 
+export type NotificationType =
+  | "GUEST_REGISTERED"
+  | "BUDGET_CATEGORY_EXCEEDED"
+  | "BUDGET_EXCEEDED"
+  | "EVENT_STATUS_CHANGED"
+  | "TASK_ASSIGNED"
+  | "RECOVERY_POINT_RESTORED";
+
+export interface AppNotification {
+  id: number;
+  eventId?: number;
+  type: NotificationType;
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+}
+
 export interface AuthResponse {
   token: string;
   id: number;
@@ -20,7 +38,9 @@ export type EventStatus =
   | "DRAFT"
   | "PUBLISHED"
   | "ONGOING"
+  | "SUSPENDED"
   | "COMPLETED"
+  | "FAILED"
   | "ARCHIVED";
 
 export interface Event {
@@ -168,10 +188,11 @@ export type GuestStatus =
 export interface Guest {
   id: number;
   name: string;
-  email: string;
+  email?: string;
   phone?: string;
   guestType: GuestType;
   status: GuestStatus;
+  registrationCode?: string;
   createdAt: string;
 }
 
@@ -192,6 +213,7 @@ export interface PublicEvent {
   registrationDeadline?: string;
   status: string;
   registeredCount: number;
+  registrationToken: string;
 }
 
 export interface Dashboard {
@@ -199,7 +221,9 @@ export interface Dashboard {
   draftEvents: number;
   publishedEvents: number;
   ongoingEvents: number;
+  suspendedEvents: number;
   completedEvents: number;
+  failedEvents: number;
   archivedEvents: number;
   totalGuests: number;
   totalAllocated: number;
@@ -282,4 +306,62 @@ export interface DailyReport {
   tasksDue: number;
   tasksCompleted: number;
   vendorsAdded: number;
+}
+
+export interface EventLog {
+  id: number;
+  action: string;
+  message: string;
+  actor: string;
+  createdAt: string;
+}
+
+export interface EventBackup {
+  id: number;
+  backupVenue?: string;
+  backupDate?: string;
+  backupCapacity?: number;
+  contingencyBudget?: number;
+  backupVendors?: string;
+  notes?: string;
+  updatedAt?: string;
+}
+
+export interface EventBackupInput {
+  backupVenue?: string;
+  backupDate?: string;
+  backupCapacity?: number;
+  contingencyBudget?: number;
+  backupVendors?: string;
+  notes?: string;
+}
+
+export interface RecoveryPoint {
+  id: number;
+  label: string;
+  restoredEventId?: number;
+  restoredAt?: string;
+  createdAt: string;
+}
+
+export interface AiInsightOption {
+  label: string;
+  description: string;
+  estimatedImpact?: string;
+}
+
+export interface AiInsight {
+  topic: string;
+  severity: "INFO" | "WARNING" | "CRITICAL";
+  summary: string;
+  options: AiInsightOption[];
+  recommendedOption?: string;
+  impactEstimate?: string;
+}
+
+export interface AiInsightsResponse {
+  insights: AiInsight[];
+  actionCount: number;
+  generatedAt?: string;
+  generating: boolean;
 }

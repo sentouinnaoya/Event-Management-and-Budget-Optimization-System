@@ -77,7 +77,6 @@ function NewEventForm() {
           <div>
             <Label required>Event name</Label>
             <Input
-              placeholder="Tech Summit 2026"
               invalid={!!errors.name}
               {...register("name")}
             />
@@ -106,7 +105,6 @@ function NewEventForm() {
               <Input
                 type="number"
                 min={1}
-                placeholder="1"
                 invalid={!!errors.durationInDays}
                 {...register("durationInDays")}
               />
@@ -117,7 +115,6 @@ function NewEventForm() {
               <Input
                 type="number"
                 min={1}
-                placeholder="200"
                 invalid={!!errors.capacity}
                 {...register("capacity")}
               />
@@ -127,7 +124,6 @@ function NewEventForm() {
           <div>
             <Label required>Venue</Label>
             <Input
-              placeholder="Convention Center"
               invalid={!!errors.venue}
               {...register("venue")}
             />

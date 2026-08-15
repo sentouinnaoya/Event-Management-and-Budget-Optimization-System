@@ -21,6 +21,7 @@ public class VendorService {
 
     private final VendorRepository vendorRepository;
     private final VendorMapper vendorMapper;
+    private final EventLogService eventLogService;
 
     @Transactional(readOnly = true)
     public List<VendorDtos.Response> list(Event event) {
@@ -30,7 +31,7 @@ public class VendorService {
     }
 
     @Transactional
-    public VendorDtos.Response create(Event event, VendorDtos.Request request) {
+    public VendorDtos.Response create(Event event, VendorDtos.Request request, String actor) {
         Vendor vendor = Vendor.builder()
                 .event(event)
                 .name(request.name().trim())
@@ -42,11 +43,17 @@ public class VendorService {
                 .status(parseStatus(request.status()))
                 .createdAt(LocalDateTime.now())
                 .build();
-        return vendorMapper.toResponse(vendorRepository.save(vendor));
+        Vendor saved = vendorRepository.save(vendor);
+        eventLogService.log(event, "VENDOR_CREATED",
+                "Added vendor '" + saved.getName() + "' (" + saved.getServiceType() + ")"
+                        + (saved.getAssignedAmount() != null
+                        ? " with assigned budget " + saved.getAssignedAmount().toPlainString()
+                        : " with no assigned budget"), actor);
+        return vendorMapper.toResponse(saved);
     }
 
     @Transactional
-    public VendorDtos.Response update(Event event, Long vendorId, VendorDtos.Request request) {
+    public VendorDtos.Response update(Event event, Long vendorId, VendorDtos.Request request, String actor) {
         Vendor vendor = getVendor(event, vendorId);
         vendor.setName(request.name().trim());
         vendor.setServiceType(request.serviceType().trim());
@@ -55,12 +62,17 @@ public class VendorService {
         vendor.setPhone(request.phone());
         vendor.setAssignedAmount(request.assignedAmount());
         vendor.setStatus(parseStatus(request.status()));
-        return vendorMapper.toResponse(vendorRepository.save(vendor));
+        Vendor saved = vendorRepository.save(vendor);
+        eventLogService.log(event, "VENDOR_UPDATED",
+                "Updated vendor '" + saved.getName() + "' (" + saved.getServiceType() + ")", actor);
+        return vendorMapper.toResponse(saved);
     }
 
     @Transactional
-    public void delete(Event event, Long vendorId) {
+    public void delete(Event event, Long vendorId, String actor) {
         Vendor vendor = getVendor(event, vendorId);
+        eventLogService.log(event, "VENDOR_DELETED",
+                "Deleted vendor '" + vendor.getName() + "' (" + vendor.getServiceType() + ")", actor);
         vendorRepository.delete(vendor);
     }
 

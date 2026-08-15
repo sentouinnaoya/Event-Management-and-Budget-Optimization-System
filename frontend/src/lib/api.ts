@@ -27,6 +27,10 @@ export const baseApi = createApi({
     "Guests",
     "Reports",
     "Dashboard",
+    "Backup",
+    "RecoveryPoints",
+    "Logs",
+    "Notifications",
   ],
   endpoints: () => ({}),
 });

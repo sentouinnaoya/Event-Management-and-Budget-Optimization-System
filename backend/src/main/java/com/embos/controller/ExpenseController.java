@@ -44,7 +44,7 @@ public class ExpenseController {
             @Valid @RequestBody ExpenseDtos.Request request) {
         Event event = eventService.getOwnedEvent(eventId, principal.user());
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(expenseService.create(event, request));
+                .body(expenseService.create(event, request, principal.user().getFullName()));
     }
 
     @PutMapping("/{expenseId}")
@@ -54,7 +54,7 @@ public class ExpenseController {
             @PathVariable Long expenseId,
             @Valid @RequestBody ExpenseDtos.Request request) {
         Event event = eventService.getOwnedEvent(eventId, principal.user());
-        return ResponseEntity.ok(expenseService.update(event, expenseId, request));
+        return ResponseEntity.ok(expenseService.update(event, expenseId, request, principal.user().getFullName()));
     }
 
     @DeleteMapping("/{expenseId}")
@@ -63,7 +63,7 @@ public class ExpenseController {
             @PathVariable Long eventId,
             @PathVariable Long expenseId) {
         Event event = eventService.getOwnedEvent(eventId, principal.user());
-        expenseService.delete(event, expenseId);
+        expenseService.delete(event, expenseId, principal.user().getFullName());
         return ResponseEntity.noContent().build();
     }
 }

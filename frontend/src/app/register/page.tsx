@@ -10,6 +10,7 @@ import { useRegisterMutation } from "../../lib/apiSlices";
 import { useAppDispatch, useAppSelector } from "../../lib/hooks";
 import { setCredentials } from "../../features/auth/authSlice";
 import { Button, FieldError, Input, Label, apiError } from "../../components/ui";
+import AuthShell from "../../components/AuthShell";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -45,10 +46,10 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm">
+    <AuthShell>
+      <div className="rounded-2xl bg-white p-8 shadow-sm">
         <div className="mb-8 text-center">
-          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-xl font-bold text-white">
+          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-xl font-bold text-white lg:hidden">
             E
           </span>
           <h1 className="mt-4 text-2xl font-bold text-slate-900">
@@ -63,7 +64,6 @@ export default function RegisterPage() {
           <div>
             <Label required>Full name</Label>
             <Input
-              placeholder="Jane Smith"
               invalid={!!errors.fullName}
               {...field("fullName")}
             />
@@ -73,7 +73,6 @@ export default function RegisterPage() {
             <Label required>Email</Label>
             <Input
               type="email"
-              placeholder="you@example.com"
               invalid={!!errors.email}
               {...field("email")}
             />
@@ -83,7 +82,6 @@ export default function RegisterPage() {
             <Label required>Password</Label>
             <Input
               type="password"
-              placeholder="At least 6 characters"
               invalid={!!errors.password}
               {...field("password")}
             />
@@ -111,6 +109,6 @@ export default function RegisterPage() {
           </Link>
         </p>
       </div>
-    </div>
+    </AuthShell>
   );
 }

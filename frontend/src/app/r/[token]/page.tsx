@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
+import { CalendarDays, CheckCircle2, MapPin, Users } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -13,6 +15,7 @@ import {
   useRegisterPublicMutation,
 } from "../../../lib/apiSlices";
 import {
+  BrandMark,
   Button,
   Card,
   FieldError,
@@ -22,13 +25,14 @@ import {
   apiError,
   formatDate,
 } from "../../../components/ui";
+import type { Guest } from "../../../lib/types";
 
 export default function PublicRegisterPage() {
   const params = useParams();
   const token = String(params.token);
   const { data: event, isLoading, error } = useGetPublicEventQuery(token);
   const [register, { isLoading: submitting }] = useRegisterPublicMutation();
-  const [done, setDone] = useState(false);
+  const [done, setDone] = useState<Guest | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const {
     register: field,
@@ -40,8 +44,15 @@ export default function PublicRegisterPage() {
 
   async function onSubmit(data: PublicRegistrationInput) {
     try {
-      await register({ token, body: data }).unwrap();
-      setDone(true);
+      const guest = await register({
+        token,
+        body: {
+          name: data.name,
+          email: data.email.trim(),
+          phone: data.phone || undefined,
+        },
+      }).unwrap();
+      setDone(guest);
     } catch (e) {
       setSubmitError(apiError(e));
     }
@@ -49,7 +60,7 @@ export default function PublicRegisterPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-slate-50 to-white">
         <Spinner />
       </div>
     );
@@ -57,7 +68,7 @@ export default function PublicRegisterPage() {
 
   if (error || !event) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-slate-50 to-white px-4">
         <Card className="w-full max-w-md text-center">
           <h1 className="text-lg font-bold text-slate-900">Event not found</h1>
           <p className="mt-1 text-sm text-slate-500">
@@ -72,53 +83,84 @@ export default function PublicRegisterPage() {
     event.status === "PUBLISHED" || event.status === "ONGOING";
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-10">
-      <div className="w-full max-w-lg space-y-4">
-        <Card>
-          <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
-              E
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-slate-50 to-white px-4 py-10">
+      <div className="mx-auto w-full max-w-lg space-y-5">
+        <div className="flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2">
+            <BrandMark size="sm" />
+          </Link>
+          <Link
+            href="/browse"
+            className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+          >
+            Browse events →
+          </Link>
+        </div>
+
+        <Card className="overflow-hidden p-0">
+          <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 px-6 py-6 text-white">
+            <span className="inline-flex items-center rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-medium text-indigo-100">
+              Guest registration
             </span>
-            <span className="text-sm font-semibold text-slate-900">EMBOS</span>
-          </div>
-          <h1 className="mt-4 text-2xl font-bold text-slate-900">
-            {event.name}
-          </h1>
-          {event.description && (
-            <p className="mt-2 text-sm text-slate-600">{event.description}</p>
-          )}
-          <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <dt className="text-slate-500">Date</dt>
-              <dd className="font-medium text-slate-800">
+            <h1 className="mt-2 text-2xl font-bold tracking-tight">
+              {event.name}
+            </h1>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 text-xs text-indigo-100">
+                <CalendarDays className="h-3.5 w-3.5" />
                 {formatDate(event.date)}
-              </dd>
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 text-xs text-indigo-100">
+                <MapPin className="h-3.5 w-3.5" />
+                {event.venue}
+              </span>
             </div>
-            <div>
-              <dt className="text-slate-500">Venue</dt>
-              <dd className="font-medium text-slate-800">{event.venue}</dd>
-            </div>
-            <div>
-              <dt className="text-slate-500">Capacity</dt>
-              <dd className="font-medium text-slate-800">{event.capacity}</dd>
-            </div>
-            <div>
-              <dt className="text-slate-500">Registered</dt>
-              <dd className="font-medium text-slate-800">
-                {event.registeredCount}
-              </dd>
-            </div>
-          </dl>
+          </div>
+          <div className="space-y-4 p-6">
+            {event.description && (
+              <p className="text-sm leading-relaxed text-slate-600">
+                {event.description}
+              </p>
+            )}
+            <dl className="grid grid-cols-2 gap-3 text-sm">
+              <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2.5">
+                <Users className="h-4 w-4 shrink-0 text-slate-400" />
+                <div>
+                  <dt className="text-xs text-slate-500">Capacity</dt>
+                  <dd className="font-medium text-slate-800">
+                    {event.capacity}
+                  </dd>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2.5">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-slate-400" />
+                <div>
+                  <dt className="text-xs text-slate-500">Registered</dt>
+                  <dd className="font-medium text-slate-800">
+                    {event.registeredCount}
+                  </dd>
+                </div>
+              </div>
+            </dl>
+          </div>
         </Card>
 
         {done ? (
-          <Card className="border-emerald-200 bg-emerald-50/50 text-center">
-            <h2 className="text-lg font-bold text-emerald-800">
+          <Card className="border-emerald-200 bg-emerald-50/60 text-center">
+            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+              <CheckCircle2 className="h-6 w-6" />
+            </span>
+            <h2 className="mt-3 text-lg font-bold text-emerald-800">
               Registration successful!
             </h2>
             <p className="mt-1 text-sm text-emerald-700">
-              Thank you for registering. The organizer will review your
-              registration before the event.
+              You're all set. We'll email your ticket to{" "}
+              <strong>{done.email}</strong> once the organizer approves your
+              registration.
+            </p>
+            <p className="mt-4 text-sm text-emerald-700">
+              The organizer will review your registration before the event.
+              Watch your inbox for the confirmation.
             </p>
           </Card>
         ) : !registrationOpen ? (
@@ -135,11 +177,7 @@ export default function PublicRegisterPage() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>
                 <Label required>Full name</Label>
-                <Input
-                  placeholder="Your name"
-                  invalid={!!errors.name}
-                  {...field("name")}
-                />
+                <Input invalid={!!errors.name} {...field("name")} />
                 <FieldError message={errors.name?.message} />
               </div>
               <div>
@@ -151,10 +189,14 @@ export default function PublicRegisterPage() {
                   {...field("email")}
                 />
                 <FieldError message={errors.email?.message} />
+                <p className="mt-1 text-xs text-slate-500">
+                  We'll email you here once the organizer approves or rejects
+                  your registration.
+                </p>
               </div>
               <div>
                 <Label>Phone</Label>
-                <Input placeholder="Optional" {...field("phone")} />
+                <Input {...field("phone")} />
               </div>
               {submitError && (
                 <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">

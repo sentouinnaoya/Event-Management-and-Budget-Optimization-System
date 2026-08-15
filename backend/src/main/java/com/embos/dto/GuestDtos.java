@@ -23,6 +23,7 @@ public final class GuestDtos {
             String phone,
             String guestType,
             String status,
+            String registrationCode,
             LocalDateTime createdAt,
             LocalDateTime updatedAt) {
     }
@@ -40,7 +41,8 @@ public final class GuestDtos {
             Integer capacity,
             LocalDate registrationDeadline,
             String status,
-            long registeredCount) {
+            long registeredCount,
+            String registrationToken) {
     }
 
     public record PublicRegistrationRequest(

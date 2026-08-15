@@ -4,18 +4,23 @@ import com.embos.dto.EventDtos;
 import com.embos.entity.Event;
 import com.embos.entity.User;
 import com.embos.entity.enums.EventStatus;
+import com.embos.event.EventStatusChangedEvent;
 import com.embos.exception.BadRequestException;
 import com.embos.exception.NotFoundException;
 import com.embos.mapper.EventMapper;
 import com.embos.repository.EventRepository;
 import com.embos.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -24,6 +29,19 @@ public class EventService {
 
     private final EventRepository eventRepository;
     private final EventMapper eventMapper;
+    private final EventLogService eventLogService;
+    private final ApplicationEventPublisher eventPublisher;
+
+    private static final Map<EventStatus, Set<EventStatus>> TRANSITIONS = new EnumMap<>(EventStatus.class);
+    static {
+        TRANSITIONS.put(EventStatus.DRAFT, Set.of(EventStatus.PUBLISHED, EventStatus.FAILED, EventStatus.ARCHIVED));
+        TRANSITIONS.put(EventStatus.PUBLISHED, Set.of(EventStatus.ONGOING, EventStatus.SUSPENDED, EventStatus.FAILED, EventStatus.ARCHIVED));
+        TRANSITIONS.put(EventStatus.ONGOING, Set.of(EventStatus.COMPLETED, EventStatus.SUSPENDED, EventStatus.FAILED, EventStatus.ARCHIVED));
+        TRANSITIONS.put(EventStatus.SUSPENDED, Set.of(EventStatus.PUBLISHED, EventStatus.ONGOING, EventStatus.FAILED, EventStatus.ARCHIVED));
+        TRANSITIONS.put(EventStatus.COMPLETED, Set.of(EventStatus.ARCHIVED));
+        TRANSITIONS.put(EventStatus.FAILED, Set.of(EventStatus.ARCHIVED));
+        TRANSITIONS.put(EventStatus.ARCHIVED, Set.of());
+    }
 
     @Transactional(readOnly = true)
     public List<EventDtos.Response> list(User currentUser, String status) {
@@ -92,25 +110,56 @@ public class EventService {
         if (event.getStatus() != EventStatus.DRAFT && event.getStatus() != EventStatus.PUBLISHED) {
             throw new BadRequestException("Only draft or published events can be published");
         }
+        EventStatus previous = event.getStatus();
         ensureToken(event);
         event.setStatus(EventStatus.PUBLISHED);
         event.setUpdatedAt(LocalDateTime.now());
-        return eventMapper.toResponse(eventRepository.save(event));
+        EventDtos.Response response = eventMapper.toResponse(eventRepository.save(event));
+        eventLogService.log(event, "PUBLISHED", "Event published", currentUser.getFullName());
+        publishStatusChanged(event, previous, EventStatus.PUBLISHED);
+        return response;
     }
 
     @Transactional
-    public EventDtos.Response changeStatus(Long id, User currentUser, String status) {
+    public EventDtos.Response changeStatus(Long id, User currentUser, String status, String reason) {
         Event event = getOwnedEvent(id, currentUser);
         EventStatus newStatus = parseStatus(status);
         if (newStatus == null) {
             throw new BadRequestException("Invalid status: " + status);
+        }
+        EventStatus current = event.getStatus();
+        if (newStatus == current) {
+            throw new BadRequestException("Event is already " + current.name());
+        }
+        if (!TRANSITIONS.getOrDefault(current, Set.of()).contains(newStatus)) {
+            throw new BadRequestException(
+                    "Cannot change event from " + current + " to " + newStatus);
+        }
+        boolean requiresReason = newStatus == EventStatus.SUSPENDED || newStatus == EventStatus.FAILED;
+        if (requiresReason && (reason == null || reason.isBlank())) {
+            String verb = newStatus == EventStatus.SUSPENDED ? "suspending" : "failing";
+            throw new BadRequestException("A reason is required when " + verb + " an event");
         }
         if (newStatus == EventStatus.PUBLISHED) {
             ensureToken(event);
         }
         event.setStatus(newStatus);
         event.setUpdatedAt(LocalDateTime.now());
-        return eventMapper.toResponse(eventRepository.save(event));
+        EventDtos.Response response = eventMapper.toResponse(eventRepository.save(event));
+        String message = "Status changed from " + current + " to " + newStatus
+                + (reason != null && !reason.isBlank() ? " — " + reason : "");
+        eventLogService.log(event, "STATUS_CHANGED", message, currentUser.getFullName());
+        publishStatusChanged(event, current, newStatus);
+        return response;
+    }
+
+    private void publishStatusChanged(Event event, EventStatus from, EventStatus to) {
+        if (from == to) {
+            return;
+        }
+        eventPublisher.publishEvent(new EventStatusChangedEvent(
+                event.getId(), event.getOrganizer().getId(), event.getName(),
+                from.name(), to.name()));
     }
 
     @Transactional(readOnly = true)

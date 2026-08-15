@@ -3,8 +3,11 @@ package com.embos.service;
 import com.embos.dto.GuestDtos;
 import com.embos.entity.Event;
 import com.embos.entity.Guest;
+import com.embos.entity.enums.EventStatus;
 import com.embos.entity.enums.GuestStatus;
 import com.embos.entity.enums.GuestType;
+import com.embos.event.GuestRegisteredEvent;
+import com.embos.event.GuestStatusChangedEvent;
 import com.embos.exception.BadRequestException;
 import com.embos.exception.ConflictException;
 import com.embos.exception.NotFoundException;
@@ -12,9 +15,11 @@ import com.embos.mapper.GuestMapper;
 import com.embos.repository.EventRepository;
 import com.embos.repository.GuestRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,9 +28,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GuestService {
 
+    private static final String CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    private static final int CODE_LENGTH = 8;
+    private static final SecureRandom RANDOM = new SecureRandom();
+
     private final GuestRepository guestRepository;
     private final EventRepository eventRepository;
     private final GuestMapper guestMapper;
+    private final EventLogService eventLogService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public List<GuestDtos.Response> list(Event event) {
@@ -35,7 +46,7 @@ public class GuestService {
     }
 
     @Transactional
-    public GuestDtos.Response addManual(Event event, GuestDtos.Request request) {
+    public GuestDtos.Response addManual(Event event, GuestDtos.Request request, String actor) {
         String email = request.email().trim().toLowerCase();
         if (guestRepository.existsByEventIdAndEmail(event.getId(), email)) {
             throw new ConflictException("A guest with this email is already registered");
@@ -47,17 +58,43 @@ public class GuestService {
                 .phone(request.phone())
                 .guestType(parseType(request.guestType()))
                 .status(GuestStatus.APPROVED)
+                .registrationCode(generateUniqueCode())
                 .createdAt(LocalDateTime.now())
                 .build();
-        return guestMapper.toResponse(guestRepository.save(guest));
+        Guest saved = guestRepository.save(guest);
+        eventLogService.log(event, "GUEST_APPROVED",
+                "Manually invited and approved " + saved.getName() + " (" + saved.getEmail() + ")", actor);
+        eventPublisher.publishEvent(new GuestStatusChangedEvent(
+                event.getId(), saved.getId(), saved.getName(), saved.getEmail(),
+                event.getName(), event.getRegistrationToken(),
+                saved.getRegistrationCode(), GuestStatus.APPROVED.name(),
+                event.getDate(), event.getVenue()));
+        return guestMapper.toResponse(saved);
     }
 
     @Transactional
-    public GuestDtos.Response updateStatus(Event event, Long guestId, String status) {
+    public GuestDtos.Response updateStatus(Event event, Long guestId, String status, String actor) {
         Guest guest = getGuest(event, guestId);
-        guest.setStatus(parseStatus(status));
+        GuestStatus newStatus = parseStatus(status);
+        GuestStatus oldStatus = guest.getStatus();
+        if (newStatus == GuestStatus.APPROVED && guest.getRegistrationCode() == null) {
+            guest.setRegistrationCode(generateUniqueCode());
+        }
+        guest.setStatus(newStatus);
         guest.setUpdatedAt(LocalDateTime.now());
-        return guestMapper.toResponse(guestRepository.save(guest));
+        GuestDtos.Response response = guestMapper.toResponse(guestRepository.save(guest));
+        if (oldStatus != newStatus
+                && (newStatus == GuestStatus.APPROVED || newStatus == GuestStatus.REJECTED)) {
+            eventLogService.log(event, newStatus == GuestStatus.APPROVED ? "GUEST_APPROVED" : "GUEST_REJECTED",
+                    (newStatus == GuestStatus.APPROVED ? "Approved" : "Rejected") + " guest "
+                            + guest.getName() + " (" + guest.getEmail() + ")", actor);
+            eventPublisher.publishEvent(new GuestStatusChangedEvent(
+                    event.getId(), guest.getId(), guest.getName(), guest.getEmail(),
+                    event.getName(), event.getRegistrationToken(),
+                    guest.getRegistrationCode(), newStatus.name(),
+                    event.getDate(), event.getVenue()));
+        }
+        return response;
     }
 
     @Transactional(readOnly = true)
@@ -74,12 +111,24 @@ public class GuestService {
     public GuestDtos.PublicEventResponse publicEvent(String token) {
         Event event = eventRepository.findByRegistrationToken(token)
                 .orElseThrow(() -> new NotFoundException("Event not found"));
+        return toPublicEventResponse(event);
+    }
+
+    @Transactional(readOnly = true)
+    public List<GuestDtos.PublicEventResponse> listPublic() {
+        return eventRepository.findAllByStatusInOrderByDateAsc(
+                        List.of(EventStatus.PUBLISHED, EventStatus.ONGOING)).stream()
+                .map(this::toPublicEventResponse)
+                .toList();
+    }
+
+    private GuestDtos.PublicEventResponse toPublicEventResponse(Event event) {
         long registered = guestRepository.countByEventIdAndStatusIn(
                 event.getId(), List.of(GuestStatus.REGISTERED, GuestStatus.APPROVED, GuestStatus.ATTENDED));
         return new GuestDtos.PublicEventResponse(
                 event.getId(), event.getName(), event.getDescription(), event.getDate(),
                 event.getVenue(), event.getCapacity(), event.getRegistrationDeadline(),
-                event.getStatus().name(), registered);
+                event.getStatus().name(), registered, event.getRegistrationToken());
     }
 
     @Transactional
@@ -112,7 +161,29 @@ public class GuestService {
                 .status(GuestStatus.REGISTERED)
                 .createdAt(LocalDateTime.now())
                 .build();
-        return guestMapper.toResponse(guestRepository.save(guest));
+        Guest saved = guestRepository.save(guest);
+        eventPublisher.publishEvent(new GuestRegisteredEvent(
+                event.getId(), event.getOrganizer().getId(), event.getName(),
+                saved.getName(), saved.getEmail()));
+        return guestMapper.toResponse(saved);
+    }
+
+    private String generateUniqueCode() {
+        for (int i = 0; i < 20; i++) {
+            String candidate = randomCode();
+            if (!guestRepository.existsByRegistrationCode(candidate)) {
+                return candidate;
+            }
+        }
+        throw new ConflictException("Could not generate a unique registration code");
+    }
+
+    private String randomCode() {
+        StringBuilder sb = new StringBuilder(CODE_LENGTH);
+        for (int i = 0; i < CODE_LENGTH; i++) {
+            sb.append(CODE_CHARS.charAt(RANDOM.nextInt(CODE_CHARS.length())));
+        }
+        return sb.toString();
     }
 
     @Transactional(readOnly = true)

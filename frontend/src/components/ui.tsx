@@ -13,25 +13,51 @@ export function cn(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
 
+export function BrandMark({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
+  const sizes = {
+    sm: "h-8 w-8 rounded-lg text-sm",
+    md: "h-9 w-9 rounded-xl text-sm",
+    lg: "h-12 w-12 rounded-xl text-xl",
+  };
+  return (
+    <span
+      className={cn(
+        "flex shrink-0 items-center justify-center bg-gradient-to-br from-indigo-500 to-indigo-700 font-bold text-white shadow-sm",
+        sizes[size]
+      )}
+    >
+      E
+    </span>
+  );
+}
+
 type ButtonVariant = "primary" | "secondary" | "danger" | "ghost" | "outline";
+type ButtonSize = "sm" | "md";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
+  size?: ButtonSize;
   loading?: boolean;
 }
 
 const buttonVariants: Record<ButtonVariant, string> = {
   primary:
-    "bg-indigo-600 text-white hover:bg-indigo-700 focus-visible:outline-indigo-600",
-  secondary: "bg-white text-slate-700 border border-slate-300 hover:bg-slate-50",
-  danger: "bg-red-600 text-white hover:bg-red-700",
+    "bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 focus-visible:outline-indigo-600",
+  secondary: "bg-white text-slate-700 border border-slate-300 shadow-sm hover:bg-slate-50",
+  danger: "bg-red-600 text-white shadow-sm hover:bg-red-700",
   ghost: "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
   outline:
     "bg-transparent text-indigo-600 border border-indigo-300 hover:bg-indigo-50",
 };
 
+const buttonSizes: Record<ButtonSize, string> = {
+  sm: "px-3 py-1.5 text-xs rounded-lg",
+  md: "px-4 py-2 text-sm rounded-lg",
+};
+
 export function Button({
   variant = "primary",
+  size = "md",
   loading = false,
   className,
   children,
@@ -41,8 +67,9 @@ export function Button({
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed",
+        "inline-flex items-center justify-center gap-2 font-medium transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]",
         buttonVariants[variant],
+        buttonSizes[size],
         className
       )}
       disabled={disabled || loading}
@@ -143,14 +170,17 @@ export function FieldError({ message }: { message?: string }) {
 export function Card({
   children,
   className,
+  hover = false,
 }: {
   children: ReactNode;
   className?: string;
+  hover?: boolean;
 }) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-slate-200 bg-white p-5 shadow-sm",
+        "rounded-xl border border-slate-200 bg-white p-5 shadow-card",
+        hover && "transition-all hover:shadow-card-hover",
         className
       )}
     >
@@ -191,13 +221,25 @@ const badgeTones: Record<Tone, string> = {
   purple: "bg-purple-100 text-purple-700",
 };
 
+const badgeDotTones: Record<Tone, string> = {
+  slate: "bg-slate-400",
+  green: "bg-emerald-500",
+  amber: "bg-amber-500",
+  red: "bg-red-500",
+  blue: "bg-blue-500",
+  indigo: "bg-indigo-500",
+  purple: "bg-purple-500",
+};
+
 export function Badge({
   children,
   tone = "slate",
+  dot = false,
   className,
 }: {
   children: ReactNode;
   tone?: Tone;
+  dot?: boolean;
   className?: string;
 }) {
   return (
@@ -208,6 +250,9 @@ export function Badge({
         className
       )}
     >
+      {dot && (
+        <span className={cn("mr-1.5 h-1.5 w-1.5 rounded-full", badgeDotTones[tone])} />
+      )}
       {children}
     </span>
   );
@@ -239,7 +284,7 @@ export function Spinner({ className }: { className?: string }) {
 
 export function PageLoader() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100">
+    <div className="flex min-h-screen items-center justify-center bg-slate-50">
       <Spinner />
     </div>
   );
@@ -249,18 +294,101 @@ export function EmptyState({
   title,
   description,
   action,
+  icon,
 }: {
   title: string;
   description?: string;
   action?: ReactNode;
+  icon?: ReactNode;
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 py-12 text-center">
+      {icon && (
+        <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+          {icon}
+        </div>
+      )}
       <p className="text-sm font-medium text-slate-700">{title}</p>
       {description && (
         <p className="text-sm text-slate-500 max-w-sm">{description}</p>
       )}
       {action}
+    </div>
+  );
+}
+
+export function Skeleton({ className }: { className?: string }) {
+  return <div className={cn("animate-shimmer rounded-md", className)} />;
+}
+
+export function ProgressBar({
+  value,
+  tone = "primary",
+  className,
+}: {
+  value: number;
+  tone?: "primary" | "amber" | "red" | "emerald";
+  className?: string;
+}) {
+  const tones = {
+    primary: "bg-indigo-500",
+    amber: "bg-amber-500",
+    red: "bg-red-500",
+    emerald: "bg-emerald-500",
+  };
+  const clamped = Math.max(0, Math.min(100, value));
+  return (
+    <div className={cn("h-2 w-full overflow-hidden rounded-full bg-slate-100", className)}>
+      <div
+        className={cn("h-full rounded-full transition-all duration-500", tones[tone])}
+        style={{ width: `${clamped}%` }}
+      />
+    </div>
+  );
+}
+
+const statAccents: Record<string, string> = {
+  indigo: "bg-indigo-50 text-indigo-600",
+  blue: "bg-blue-50 text-blue-600",
+  amber: "bg-amber-50 text-amber-600",
+  emerald: "bg-emerald-50 text-emerald-600",
+  red: "bg-red-50 text-red-600",
+  purple: "bg-purple-50 text-purple-600",
+  slate: "bg-slate-100 text-slate-600",
+};
+
+export function StatCard({
+  label,
+  value,
+  icon,
+  accent = "indigo",
+  sub,
+}: {
+  label: string;
+  value: string | number;
+  icon: ReactNode;
+  accent?: keyof typeof statAccents;
+  sub?: string;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-card transition-all hover:shadow-card-hover">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          {label}
+        </p>
+        <span
+          className={cn(
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+            statAccents[accent] ?? statAccents.indigo
+          )}
+        >
+          {icon}
+        </span>
+      </div>
+      <p className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+        {value}
+      </p>
+      {sub && <p className="mt-1 text-xs text-slate-500">{sub}</p>}
     </div>
   );
 }
@@ -280,10 +408,10 @@ export function Modal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-slate-900/50"
+        className="absolute inset-0 bg-slate-900/40 backdrop-blur-[1px]"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+      <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-popover animate-pop-in">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
           <button
@@ -375,7 +503,9 @@ const statusTones: Record<string, string> = {
   DRAFT: "slate",
   PUBLISHED: "blue",
   ONGOING: "indigo",
+  SUSPENDED: "amber",
   COMPLETED: "green",
+  FAILED: "red",
   ARCHIVED: "slate",
   OK: "green",
   WARNING: "amber",

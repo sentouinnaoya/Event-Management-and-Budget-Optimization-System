@@ -27,6 +27,7 @@ public class BudgetService {
 
     private final BudgetCategoryRepository categoryRepository;
     private final ExpenseRepository expenseRepository;
+    private final EventLogService eventLogService;
 
     @Transactional(readOnly = true)
     public List<BudgetDtos.CategoryResponse> listCategories(Event event) {
@@ -36,7 +37,7 @@ public class BudgetService {
     }
 
     @Transactional
-    public BudgetDtos.CategoryResponse addCategory(Event event, BudgetDtos.CategoryRequest request) {
+    public BudgetDtos.CategoryResponse addCategory(Event event, BudgetDtos.CategoryRequest request, String actor) {
         if (categoryRepository.existsByEventIdAndName(event.getId(), request.name().trim())) {
             throw new ConflictException("A budget category with this name already exists");
         }
@@ -47,24 +48,34 @@ public class BudgetService {
                 .alertThresholdPct(request.alertThresholdPct())
                 .createdAt(LocalDateTime.now())
                 .build();
-        return toCategoryResponse(categoryRepository.save(category));
+        BudgetCategory saved = categoryRepository.save(category);
+        eventLogService.log(event, "BUDGET_CATEGORY_CREATED",
+                "Added budget category '" + saved.getName() + "' with " + saved.getAllocatedAmount().toPlainString()
+                        + " allocated", actor);
+        return toCategoryResponse(saved);
     }
 
     @Transactional
-    public BudgetDtos.CategoryResponse updateCategory(Event event, Long categoryId, BudgetDtos.CategoryRequest request) {
+    public BudgetDtos.CategoryResponse updateCategory(Event event, Long categoryId, BudgetDtos.CategoryRequest request, String actor) {
         BudgetCategory category = getCategory(event, categoryId);
         category.setName(request.name().trim());
         category.setAllocatedAmount(request.allocatedAmount());
         category.setAlertThresholdPct(request.alertThresholdPct());
-        return toCategoryResponse(categoryRepository.save(category));
+        BudgetCategory saved = categoryRepository.save(category);
+        eventLogService.log(event, "BUDGET_CATEGORY_UPDATED",
+                "Updated budget category '" + saved.getName() + "' to " + saved.getAllocatedAmount().toPlainString()
+                        + " allocated", actor);
+        return toCategoryResponse(saved);
     }
 
     @Transactional
-    public void deleteCategory(Event event, Long categoryId) {
+    public void deleteCategory(Event event, Long categoryId, String actor) {
         BudgetCategory category = getCategory(event, categoryId);
         if (expenseRepository.existsByCategoryId(categoryId)) {
             throw new BadRequestException("Cannot delete a category that already has expenses");
         }
+        eventLogService.log(event, "BUDGET_CATEGORY_DELETED",
+                "Deleted budget category '" + category.getName() + "'", actor);
         categoryRepository.delete(category);
     }
 

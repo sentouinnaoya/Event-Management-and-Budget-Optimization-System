@@ -14,6 +14,7 @@ import TasksTab from "../../../components/events/TasksTab";
 import GuestsTab from "../../../components/events/GuestsTab";
 import ExpensesTab from "../../../components/events/ExpensesTab";
 import ReportsTab from "../../../components/events/ReportsTab";
+import BackupTab from "../../../components/events/BackupTab";
 
 const tabs = [
   { key: "overview", label: "Overview" },
@@ -24,6 +25,7 @@ const tabs = [
   { key: "guests", label: "Guests" },
   { key: "expenses", label: "Expenses" },
   { key: "reports", label: "Reports" },
+  { key: "backup", label: "Backup" },
 ];
 
 export default function EventDetailPage() {
@@ -83,6 +85,7 @@ export default function EventDetailPage() {
           {tab === "guests" && <GuestsTab eventId={eventId} />}
           {tab === "expenses" && <ExpensesTab eventId={eventId} />}
           {tab === "reports" && <ReportsTab eventId={eventId} />}
+          {tab === "backup" && <BackupTab eventId={eventId} />}
         </div>
       </AppShell>
     </ProtectedRoute>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   useBudgetSummaryQuery,
   useChangeEventStatusMutation,
+  useGetBackupQuery,
   useGetEventQuery,
   usePublishEventMutation,
 } from "../../lib/apiSlices";
@@ -11,6 +12,8 @@ import {
   Button,
   Card,
   CardHeader,
+  Modal,
+  Textarea,
   apiError,
   formatDate,
   formatMoney,
@@ -19,12 +22,40 @@ import {
 export default function OverviewTab({ eventId }: { eventId: number }) {
   const { data: event } = useGetEventQuery(eventId);
   const { data: budget } = useBudgetSummaryQuery(eventId, { skip: !event });
+  const { data: backup } = useGetBackupQuery(eventId, {
+    skip: !event || (event.status !== "SUSPENDED" && event.status !== "FAILED"),
+  });
   const [publish, { isLoading: publishing }] = usePublishEventMutation();
   const [changeStatus] = useChangeEventStatusMutation();
   const [copied, setCopied] = useState(false);
   const [msg, setMsg] = useState<{ type: "error" | "success"; text: string } | null>(null);
+  const [reasonTarget, setReasonTarget] = useState<"SUSPENDED" | "FAILED" | null>(null);
+  const [reason, setReason] = useState("");
+  const [savingStatus, setSavingStatus] = useState(false);
 
   if (!event) return null;
+
+  async function applyStatus(target: "SUSPENDED" | "FAILED") {
+    setSavingStatus(true);
+    try {
+      const r = reason.trim();
+      if (!r) {
+        setMsg({ type: "error", text: "A reason is required." });
+        return;
+      }
+      await changeStatus({ id: eventId, status: target, reason: r }).unwrap();
+      setMsg({
+        type: "success",
+        text: target === "SUSPENDED" ? "Event suspended." : "Event marked as failed.",
+      });
+      setReasonTarget(null);
+      setReason("");
+    } catch (e) {
+      setMsg({ type: "error", text: apiError(e) });
+    } finally {
+      setSavingStatus(false);
+    }
+  }
 
   const registrationUrl =
     typeof window !== "undefined" && event.registrationToken
@@ -33,7 +64,16 @@ export default function OverviewTab({ eventId }: { eventId: number }) {
 
   async function copyLink() {
     if (!registrationUrl) return;
-    await navigator.clipboard.writeText(registrationUrl);
+    try {
+      const html = `<a href="${registrationUrl}">${registrationUrl}</a>`;
+      const item = new ClipboardItem({
+        "text/html": new Blob([html], { type: "text/html" }),
+        "text/plain": new Blob([registrationUrl], { type: "text/plain" }),
+      });
+      await navigator.clipboard.write([item]);
+    } catch {
+      await navigator.clipboard.writeText(registrationUrl);
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -121,6 +161,24 @@ export default function OverviewTab({ eventId }: { eventId: number }) {
 
         <Card>
           <CardHeader title="Status & lifecycle" />
+          {(event.status === "SUSPENDED" || event.status === "FAILED") && (
+            <div
+              className={`mb-3 rounded-lg px-3 py-2 text-sm ${
+                event.status === "FAILED"
+                  ? "bg-red-50 text-red-700"
+                  : "bg-amber-50 text-amber-700"
+              }`}
+            >
+              {event.status === "FAILED"
+                ? "This event failed and cannot be resumed."
+                : "This event is suspended. Resume it or mark it as failed."}
+              {backup && (
+                <p className="mt-1 text-xs opacity-80">
+                  A backup plan is set for this event.
+                </p>
+              )}
+            </div>
+          )}
           <div className="flex flex-wrap gap-2">
             {event.status === "DRAFT" && (
               <Button
@@ -154,6 +212,44 @@ export default function OverviewTab({ eventId }: { eventId: number }) {
                 }
               >
                 Mark completed
+              </Button>
+            )}
+            {event.status === "SUSPENDED" && (
+              <Button
+                onClick={() =>
+                  run(
+                    () => changeStatus({ id: eventId, status: "ONGOING" }).unwrap(),
+                    "Event resumed."
+                  )
+                }
+              >
+                Resume
+              </Button>
+            )}
+            {(event.status === "PUBLISHED" || event.status === "ONGOING") && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setReason("");
+                  setReasonTarget("SUSPENDED");
+                }}
+              >
+                Suspend
+              </Button>
+            )}
+            {(event.status === "DRAFT" ||
+              event.status === "PUBLISHED" ||
+              event.status === "ONGOING" ||
+              event.status === "SUSPENDED") && (
+              <Button
+                variant="outline"
+                className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                onClick={() => {
+                  setReason("");
+                  setReasonTarget("FAILED");
+                }}
+              >
+                Mark failed
               </Button>
             )}
             {event.status !== "ARCHIVED" && (
@@ -191,6 +287,38 @@ export default function OverviewTab({ eventId }: { eventId: number }) {
           </p>
         </Card>
       </div>
+
+      <Modal
+        open={reasonTarget !== null}
+        onClose={() => setReasonTarget(null)}
+        title={reasonTarget === "SUSPENDED" ? "Suspend event" : "Mark event as failed"}
+      >
+        <div className="space-y-3">
+          <p className="text-sm text-slate-500">
+            {reasonTarget === "SUSPENDED"
+              ? "Provide a reason for suspending this event. It will be recorded in the audit log."
+              : "Provide a reason for marking this event as failed. It will be recorded in the audit log."}
+          </p>
+          <Textarea
+            rows={3}
+            placeholder="Reason"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+          <div className="flex justify-end gap-2 pt-1">
+            <Button type="button" variant="secondary" onClick={() => setReasonTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              loading={savingStatus}
+              onClick={() => reasonTarget && applyStatus(reasonTarget)}
+            >
+              Confirm
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

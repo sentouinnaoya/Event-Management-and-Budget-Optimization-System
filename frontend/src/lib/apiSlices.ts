@@ -1,5 +1,7 @@
 import { baseApi } from "./api";
 import type {
+  AiInsightsResponse,
+  AppNotification,
   AttendanceReport,
   AuthResponse,
   BudgetCategory,
@@ -9,7 +11,10 @@ import type {
   DailyReport,
   Dashboard,
   Event,
+  EventBackup,
+  EventBackupInput,
   EventInput,
+  EventLog,
   Expense,
   ExpenseInput,
   ExpenseReportData,
@@ -17,6 +22,7 @@ import type {
   GuestInput,
   GuestStatus,
   PublicEvent,
+  RecoveryPoint,
   Staff,
   StaffInput,
   StaffReportData,
@@ -78,11 +84,11 @@ export const eventsApi = baseApi.injectEndpoints({
         "Dashboard",
       ],
     }),
-    changeEventStatus: b.mutation<Event, { id: number; status: string }>({
-      query: ({ id, status }) => ({
+    changeEventStatus: b.mutation<Event, { id: number; status: string; reason?: string }>({
+      query: ({ id, status, reason }) => ({
         url: `/events/${id}/status`,
         method: "PATCH",
-        body: { status },
+        body: { status, reason },
       }),
       invalidatesTags: (_r, _e, { id }) => [
         { type: "Event", id },
@@ -128,6 +134,17 @@ export const budgetApi = baseApi.injectEndpoints({
     budgetSummary: b.query<BudgetSummary, number>({
       query: (eventId) => `/events/${eventId}/budget/summary`,
       providesTags: ["Budget", "Reports"],
+    }),
+    getBudgetInsights: b.query<AiInsightsResponse, number>({
+      query: (eventId) => `/events/${eventId}/budget/insights`,
+      providesTags: ["Budget"],
+    }),
+    generateBudgetInsights: b.mutation<AiInsightsResponse, number>({
+      query: (eventId) => ({
+        url: `/events/${eventId}/budget/insights`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Budget"],
     }),
   }),
 });
@@ -313,6 +330,9 @@ export const guestApi = baseApi.injectEndpoints({
 
 export const publicApi = baseApi.injectEndpoints({
   endpoints: (b) => ({
+    listPublicEvents: b.query<PublicEvent[], void>({
+      query: () => `/public/events`,
+    }),
     getPublicEvent: b.query<PublicEvent, string>({
       query: (token) => `/public/events/${token}`,
     }),
@@ -395,6 +415,62 @@ export const adminApi = baseApi.injectEndpoints({
   }),
 });
 
+export const backupApi = baseApi.injectEndpoints({
+  endpoints: (b) => ({
+    getBackup: b.query<EventBackup, number>({
+      query: (eventId) => `/events/${eventId}/backup`,
+      providesTags: (_r, _e, eventId) => [{ type: "Backup", id: eventId }],
+    }),
+    updateBackup: b.mutation<EventBackup, { eventId: number; body: EventBackupInput }>({
+      query: ({ eventId, body }) => ({
+        url: `/events/${eventId}/backup`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: (_r, _e, { eventId }) => [
+        { type: "Backup", id: eventId },
+        "Reports",
+      ],
+    }),
+  }),
+});
+
+export const recoveryPointApi = baseApi.injectEndpoints({
+  endpoints: (b) => ({
+    listRecoveryPoints: b.query<RecoveryPoint[], number>({
+      query: (eventId) => `/events/${eventId}/recovery-points`,
+      providesTags: (_r, _e, eventId) => [{ type: "RecoveryPoints", id: eventId }],
+    }),
+    createRecoveryPoint: b.mutation<RecoveryPoint, { eventId: number; label: string }>({
+      query: ({ eventId, label }) => ({
+        url: `/events/${eventId}/recovery-points`,
+        method: "POST",
+        body: { label },
+      }),
+      invalidatesTags: (_r, _e, { eventId }) => [
+        { type: "RecoveryPoints", id: eventId },
+        "Reports",
+      ],
+    }),
+    restoreRecoveryPoint: b.mutation<Event, { eventId: number; recoveryPointId: number }>({
+      query: ({ eventId, recoveryPointId }) => ({
+        url: `/events/${eventId}/recovery-points/${recoveryPointId}/restore`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Events", "Dashboard"],
+    }),
+  }),
+});
+
+export const logApi = baseApi.injectEndpoints({
+  endpoints: (b) => ({
+    listEventLogs: b.query<EventLog[], number>({
+      query: (eventId) => `/events/${eventId}/logs`,
+      providesTags: (_r, _e, eventId) => [{ type: "Logs", id: eventId }],
+    }),
+  }),
+});
+
 export const {
   useLoginMutation,
   useRegisterMutation,
@@ -416,6 +492,8 @@ export const {
   useUpdateCategoryMutation,
   useDeleteCategoryMutation,
   useBudgetSummaryQuery,
+  useGetBudgetInsightsQuery,
+  useGenerateBudgetInsightsMutation,
 } = budgetApi;
 
 export const {
@@ -454,6 +532,7 @@ export const {
 } = guestApi;
 
 export const {
+  useListPublicEventsQuery,
   useGetPublicEventQuery,
   useRegisterPublicMutation,
 } = publicApi;
@@ -472,3 +551,51 @@ export const {
 export const { useGetDashboardQuery } = dashboardApi;
 
 export const { useListUsersQuery, useChangeUserRoleMutation } = adminApi;
+
+export const { useGetBackupQuery, useUpdateBackupMutation } = backupApi;
+
+export const {
+  useListRecoveryPointsQuery,
+  useCreateRecoveryPointMutation,
+  useRestoreRecoveryPointMutation,
+} = recoveryPointApi;
+
+export const { useListEventLogsQuery } = logApi;
+
+export const notificationApi = baseApi.injectEndpoints({
+  endpoints: (b) => ({
+    listNotifications: b.query<AppNotification[], void>({
+      query: () => `/notifications`,
+      providesTags: ["Notifications"],
+    }),
+    getUnreadNotificationCount: b.query<{ count: number }, void>({
+      query: () => `/notifications/unread-count`,
+      providesTags: ["Notifications"],
+    }),
+    markNotificationRead: b.mutation<AppNotification, number>({
+      query: (id) => ({ url: `/notifications/${id}/read`, method: "PATCH" }),
+      invalidatesTags: ["Notifications"],
+    }),
+    markAllNotificationsRead: b.mutation<number, void>({
+      query: () => ({ url: `/notifications/read-all`, method: "POST" }),
+      invalidatesTags: ["Notifications"],
+    }),
+    deleteNotification: b.mutation<void, number>({
+      query: (id) => ({ url: `/notifications/${id}`, method: "DELETE" }),
+      invalidatesTags: ["Notifications"],
+    }),
+    clearNotifications: b.mutation<void, void>({
+      query: () => ({ url: `/notifications`, method: "DELETE" }),
+      invalidatesTags: ["Notifications"],
+    }),
+  }),
+});
+
+export const {
+  useListNotificationsQuery,
+  useGetUnreadNotificationCountQuery,
+  useMarkNotificationReadMutation,
+  useMarkAllNotificationsReadMutation,
+  useDeleteNotificationMutation,
+  useClearNotificationsMutation,
+} = notificationApi;

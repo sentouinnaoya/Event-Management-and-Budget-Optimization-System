@@ -35,14 +35,16 @@ public class DashboardService {
         long totalGuests = 0;
         BigDecimal totalAllocated = BigDecimal.ZERO;
         BigDecimal totalSpent = BigDecimal.ZERO;
-        int draft = 0, published = 0, ongoing = 0, completed = 0, archived = 0;
+        int draft = 0, published = 0, ongoing = 0, suspended = 0, completed = 0, failed = 0, archived = 0;
 
         for (Event event : events) {
             switch (event.getStatus()) {
                 case DRAFT -> draft++;
                 case PUBLISHED -> published++;
                 case ONGOING -> ongoing++;
+                case SUSPENDED -> suspended++;
                 case COMPLETED -> completed++;
+                case FAILED -> failed++;
                 case ARCHIVED -> archived++;
             }
             if (event.getStatus() != EventStatus.ARCHIVED) {
@@ -60,7 +62,7 @@ public class DashboardService {
                 .toList();
 
         return new DashboardDtos.Response(
-                events.size(), draft, published, ongoing, completed, archived,
+                events.size(), draft, published, ongoing, suspended, completed, failed, archived,
                 totalGuests, totalAllocated, totalSpent, recentEvents);
     }
 }

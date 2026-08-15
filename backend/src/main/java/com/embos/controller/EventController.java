@@ -78,6 +78,6 @@ public class EventController {
             @AuthenticationPrincipal AppUserDetails principal,
             @PathVariable Long id,
             @Valid @RequestBody EventDtos.StatusRequest request) {
-        return ResponseEntity.ok(eventService.changeStatus(id, principal.user(), request.status()));
+        return ResponseEntity.ok(eventService.changeStatus(id, principal.user(), request.status(), request.reason()));
     }
 }

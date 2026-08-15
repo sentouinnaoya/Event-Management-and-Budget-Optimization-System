@@ -4,6 +4,7 @@ import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { expenseSchema, type ExpenseInputZ } from "../../lib/schemas";
 import {
   useAddExpenseMutation,
@@ -70,6 +71,30 @@ export default function ExpensesTab({ eventId }: { eventId: number }) {
           paymentStatus: input.paymentStatus,
         },
       }).unwrap();
+
+      const category = budget?.categories.find(
+        (c) => c.id === Number(input.categoryId)
+      );
+      const categoryOver = category
+        ? category.spentAmount + input.amount - category.allocatedAmount
+        : 0;
+      const eventOver = budget
+        ? budget.totalSpent + input.amount - budget.totalAllocated
+        : 0;
+
+      if (categoryOver > 0) {
+        toast.error(
+          `Category "${category?.name ?? "this category"}" is over budget by ${formatMoney(
+            categoryOver
+          )} after this expense`
+        );
+      }
+      if (eventOver > 0) {
+        toast.error(
+          `Event budget exceeded by ${formatMoney(eventOver)} after this expense`
+        );
+      }
+
       reset();
       setError(null);
     } catch (e) {
@@ -152,7 +177,6 @@ export default function ExpensesTab({ eventId }: { eventId: number }) {
                 type="number"
                 step="0.01"
                 min={0}
-                placeholder="100.00"
                 invalid={!!errors.amount}
                 {...register("amount")}
               />

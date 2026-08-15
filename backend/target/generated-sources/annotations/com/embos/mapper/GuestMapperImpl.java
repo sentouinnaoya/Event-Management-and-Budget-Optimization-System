@@ -8,8 +8,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-08-05T20:59:19+0630",
-    comments = "version: 1.6.2, compiler: Eclipse JDT (IDE) 3.46.100.v20260624-0231, environment: Java 21.0.11 (Eclipse Adoptium)"
+    date = "2026-08-15T15:14:47+0630",
+    comments = "version: 1.6.2, compiler: javac, environment: Java 19.0.1 (Oracle Corporation)"
 )
 @Component
 public class GuestMapperImpl implements GuestMapper {
@@ -26,6 +26,7 @@ public class GuestMapperImpl implements GuestMapper {
         String phone = null;
         String guestType = null;
         String status = null;
+        String registrationCode = null;
         LocalDateTime createdAt = null;
         LocalDateTime updatedAt = null;
 
@@ -39,10 +40,11 @@ public class GuestMapperImpl implements GuestMapper {
         if ( guest.getStatus() != null ) {
             status = guest.getStatus().name();
         }
+        registrationCode = guest.getRegistrationCode();
         createdAt = guest.getCreatedAt();
         updatedAt = guest.getUpdatedAt();
 
-        GuestDtos.Response response = new GuestDtos.Response( id, name, email, phone, guestType, status, createdAt, updatedAt );
+        GuestDtos.Response response = new GuestDtos.Response( id, name, email, phone, guestType, status, registrationCode, createdAt, updatedAt );
 
         return response;
     }

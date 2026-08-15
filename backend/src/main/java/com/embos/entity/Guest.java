@@ -47,6 +47,9 @@ public class Guest {
     @Column(length = 50)
     private String phone;
 
+    @Column(name = "registration_code", unique = true, length = 12)
+    private String registrationCode;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private GuestType guestType;

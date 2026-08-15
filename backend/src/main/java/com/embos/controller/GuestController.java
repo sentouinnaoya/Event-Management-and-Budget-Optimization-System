@@ -42,7 +42,7 @@ public class GuestController {
             @PathVariable Long eventId,
             @Valid @RequestBody GuestDtos.Request request) {
         Event event = eventService.getOwnedEvent(eventId, principal.user());
-        return ResponseEntity.status(HttpStatus.CREATED).body(guestService.addManual(event, request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(guestService.addManual(event, request, principal.user().getFullName()));
     }
 
     @PatchMapping("/{guestId}/status")
@@ -52,6 +52,6 @@ public class GuestController {
             @PathVariable Long guestId,
             @Valid @RequestBody GuestDtos.StatusRequest request) {
         Event event = eventService.getOwnedEvent(eventId, principal.user());
-        return ResponseEntity.ok(guestService.updateStatus(event, guestId, request.status()));
+        return ResponseEntity.ok(guestService.updateStatus(event, guestId, request.status(), principal.user().getFullName()));
     }
 }

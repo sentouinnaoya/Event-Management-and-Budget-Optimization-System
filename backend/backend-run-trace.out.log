@@ -1,0 +1,151 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2026-08-12T14:29:05.334+06:30  INFO 11100 --- [embos-backend] [           main] com.embos.EmbosApplication               : Starting EmbosApplication v0.0.1-SNAPSHOT using Java 19.0.1 with PID 11100 (C:\Users\PC\Documents\event\backend\target\embos-backend-0.0.1-SNAPSHOT.jar started by PC in C:\Users\PC\Documents\event\backend)
+2026-08-12T14:29:05.342+06:30  INFO 11100 --- [embos-backend] [           main] com.embos.EmbosApplication               : No active profile set, falling back to 1 default profile: "default"
+2026-08-12T14:29:07.041+06:30  INFO 11100 --- [embos-backend] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-08-12T14:29:07.197+06:30  INFO 11100 --- [embos-backend] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 136 ms. Found 12 JPA repository interfaces.
+2026-08-12T14:29:08.380+06:30  INFO 11100 --- [embos-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-08-12T14:29:08.411+06:30  INFO 11100 --- [embos-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-08-12T14:29:08.417+06:30  INFO 11100 --- [embos-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
+2026-08-12T14:29:08.482+06:30  INFO 11100 --- [embos-backend] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-08-12T14:29:08.490+06:30  INFO 11100 --- [embos-backend] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 3010 ms
+2026-08-12T14:29:08.772+06:30  INFO 11100 --- [embos-backend] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-08-12T14:29:08.935+06:30  INFO 11100 --- [embos-backend] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.4.4.Final
+2026-08-12T14:29:09.007+06:30  INFO 11100 --- [embos-backend] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-08-12T14:29:09.467+06:30  INFO 11100 --- [embos-backend] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-08-12T14:29:09.525+06:30  INFO 11100 --- [embos-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-08-12T14:29:09.852+06:30  INFO 11100 --- [embos-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@5feb82b3
+2026-08-12T14:29:09.860+06:30  INFO 11100 --- [embos-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-08-12T14:29:09.935+06:30  WARN 11100 --- [embos-backend] [           main] org.hibernate.dialect.Dialect            : HHH000511: The 5.5.0 version for [org.hibernate.dialect.MySQLDialect] is no longer supported, hence certain features may not work properly. The minimum supported version is 8.0.0. Check the community dialects project for available legacy versions.
+2026-08-12T14:29:11.673+06:30  INFO 11100 --- [embos-backend] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-08-12T14:29:11.952+06:30  INFO 11100 --- [embos-backend] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-08-12T14:29:13.828+06:30 TRACE 11100 --- [embos-backend] [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 
+	c.e.c.AdminController:
+	{GET [/api/admin/users]}: users()
+	{PATCH [/api/admin/users/{id}/role]}: changeRole(Long,Map)
+2026-08-12T14:29:13.846+06:30 TRACE 11100 --- [embos-backend] [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 
+	c.e.c.AuthController:
+	{POST [/api/auth/register]}: register(RegisterRequest)
+	{POST [/api/auth/login]}: login(LoginRequest)
+2026-08-12T14:29:13.866+06:30 TRACE 11100 --- [embos-backend] [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 
+	c.e.c.BudgetCategoryController:
+	{PUT [/api/events/{eventId}/budget-categories/{categoryId}]}: update(AppUserDetails,Long,Long,CategoryRequest)
+	{GET [/api/events/{eventId}/budget-categories]}: list(AppUserDetails,Long)
+	{DELETE [/api/events/{eventId}/budget-categories/{categoryId}]}: delete(AppUserDetails,Long,Long)
+	{POST [/api/events/{eventId}/budget-categories]}: create(AppUserDetails,Long,CategoryRequest)
+2026-08-12T14:29:13.878+06:30 TRACE 11100 --- [embos-backend] [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 
+	c.e.c.BudgetController:
+	{GET [/api/events/{eventId}/budget/summary]}: summary(AppUserDetails,Long)
+2026-08-12T14:29:13.886+06:30 TRACE 11100 --- [embos-backend] [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 
+	c.e.c.DashboardController:
+	{GET [/api/dashboard]}: dashboard(AppUserDetails)
+2026-08-12T14:29:13.892+06:30 TRACE 11100 --- [embos-backend] [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 
+	c.e.c.EventBackupController:
+	{GET [/api/events/{eventId}/backup]}: get(AppUserDetails,Long)
+	{PUT [/api/events/{eventId}/backup]}: upsert(AppUserDetails,Long,Request)
+2026-08-12T14:29:13.902+06:30 TRACE 11100 --- [embos-backend] [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 
+	c.e.c.EventController:
+	{GET [/api/events/{id}]}: get(AppUserDetails,Long)
+	{PUT [/api/events/{id}]}: update(AppUserDetails,Long,Request)
+	{GET [/api/events]}: list(AppUserDetails,String)
+	{DELETE [/api/events/{id}]}: delete(AppUserDetails,Long)
+	{POST [/api/events]}: create(AppUserDetails,Request)
+	{POST [/api/events/{id}/publish]}: publish(AppUserDetails,Long)
+	{PATCH [/api/events/{id}/status]}: changeStatus(AppUserDetails,Long,StatusRequest)
+2026-08-12T14:29:13.912+06:30 TRACE 11100 --- [embos-backend] [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 
+	c.e.c.EventLogController:
+	{GET [/api/events/{eventId}/logs]}: list(AppUserDetails,Long)
+2026-08-12T14:29:13.921+06:30 TRACE 11100 --- [embos-backend] [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 
+	c.e.c.ExpenseController:
+	{PUT [/api/events/{eventId}/expenses/{expenseId}]}: update(AppUserDetails,Long,Long,Request)
+	{GET [/api/events/{eventId}/expenses]}: list(AppUserDetails,Long)
+	{DELETE [/api/events/{eventId}/expenses/{expenseId}]}: delete(AppUserDetails,Long,Long)
+	{POST [/api/events/{eventId}/expenses]}: create(AppUserDetails,Long,Request)
+2026-08-12T14:29:13.930+06:30 TRACE 11100 --- [embos-backend] [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 
+	c.e.c.GuestController:
+	{GET [/api/events/{eventId}/guests]}: list(AppUserDetails,Long)
+	{PATCH [/api/events/{eventId}/guests/{guestId}/status]}: updateStatus(AppUserDetails,Long,Long,StatusRequest)
+	{POST [/api/events/{eventId}/guests]}: addManual(AppUserDetails,Long,Request)
+2026-08-12T14:29:13.939+06:30 TRACE 11100 --- [embos-backend] [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 
+	c.e.c.NotificationController:
+	{GET [/api/notifications]}: list(AppUserDetails)
+	{DELETE [/api/notifications/{id}]}: delete(AppUserDetails,Long)
+	{POST [/api/notifications/read-all]}: markAllRead(AppUserDetails)
+	{PATCH [/api/notifications/{id}/read]}: markRead(AppUserDetails,Long)
+	{GET [/api/notifications/unread-count]}: unreadCount(AppUserDetails)
+	{DELETE [/api/notifications]}: deleteAll(AppUserDetails)
+2026-08-12T14:29:13.948+06:30 TRACE 11100 --- [embos-backend] [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 
+	c.e.c.PublicEventController:
+	{GET [/api/public/events/{token}]}: get(String)
+	{POST [/api/public/events/{token}/register]}: register(String,PublicRegistrationRequest)
+	{GET [/api/public/events/{token}/guest]}: status(String,String)
+	{GET [/api/public/events/{token}/ticket/{guestId}]}: ticket(String,Long)
+2026-08-12T14:29:13.956+06:30 TRACE 11100 --- [embos-backend] [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 
+	c.e.c.PublicEventsController:
+	{GET [/api/public/events]}: list()
+2026-08-12T14:29:13.965+06:30 TRACE 11100 --- [embos-backend] [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 
+	c.e.c.RecoveryPointController:
+	{GET [/api/events/{eventId}/recovery-points]}: list(AppUserDetails,Long)
+	{POST [/api/events/{eventId}/recovery-points]}: create(AppUserDetails,Long,CreateRequest)
+	{POST [/api/events/{eventId}/recovery-points/{recoveryPointId}/restore]}: restore(AppUserDetails,Long,Long)
+2026-08-12T14:29:13.972+06:30 TRACE 11100 --- [embos-backend] [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 
+	c.e.c.ReportController:
+	{GET [/api/events/{eventId}/reports/{type}]}: report(AppUserDetails,Long,String)
+	{GET [/api/events/{eventId}/reports/daily]}: daily(AppUserDetails,Long,LocalDate)
+	{GET [/api/events/{eventId}/reports/daily-overview]}: dailyOverview(AppUserDetails,Long)
+2026-08-12T14:29:13.984+06:30 TRACE 11100 --- [embos-backend] [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 
+	c.e.c.StaffController:
+	{PUT [/api/events/{eventId}/staff/{staffId}]}: update(AppUserDetails,Long,Long,Request)
+	{GET [/api/events/{eventId}/staff]}: list(AppUserDetails,Long)
+	{DELETE [/api/events/{eventId}/staff/{staffId}]}: delete(AppUserDetails,Long,Long)
+	{POST [/api/events/{eventId}/staff]}: create(AppUserDetails,Long,Request)
+2026-08-12T14:29:13.993+06:30 TRACE 11100 --- [embos-backend] [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 
+	c.e.c.TaskController:
+	{PUT [/api/events/{eventId}/tasks/{taskId}]}: update(AppUserDetails,Long,Long,Request)
+	{GET [/api/events/{eventId}/tasks]}: list(AppUserDetails,Long)
+	{DELETE [/api/events/{eventId}/tasks/{taskId}]}: delete(AppUserDetails,Long,Long)
+	{POST [/api/events/{eventId}/tasks]}: create(AppUserDetails,Long,Request)
+	{PATCH [/api/events/{eventId}/tasks/{taskId}/status]}: updateStatus(AppUserDetails,Long,Long,StatusRequest)
+2026-08-12T14:29:14.004+06:30 TRACE 11100 --- [embos-backend] [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 
+	c.e.c.VendorController:
+	{PUT [/api/events/{eventId}/vendors/{vendorId}]}: update(AppUserDetails,Long,Long,Request)
+	{GET [/api/events/{eventId}/vendors]}: list(AppUserDetails,Long)
+	{DELETE [/api/events/{eventId}/vendors/{vendorId}]}: delete(AppUserDetails,Long,Long)
+	{POST [/api/events/{eventId}/vendors]}: create(AppUserDetails,Long,Request)
+2026-08-12T14:29:14.017+06:30 TRACE 11100 --- [embos-backend] [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 
+	o.s.b.a.w.s.e.BasicErrorController:
+	{ [/error]}: error(HttpServletRequest)
+	{ [/error], produces [text/html]}: errorHtml(HttpServletRequest,HttpServletResponse)
+2026-08-12T14:29:14.036+06:30 TRACE 11100 --- [embos-backend] [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 
+	o.s.w.a.OpenApiWebMvcResource:
+	{GET [/v3/api-docs.yaml], produces [application/vnd.oai.openapi]}: openapiYaml(HttpServletRequest,String,Locale)
+	{GET [/v3/api-docs], produces [application/json]}: openapiJson(HttpServletRequest,String,Locale)
+2026-08-12T14:29:14.045+06:30 TRACE 11100 --- [embos-backend] [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 
+	o.s.w.u.SwaggerWelcomeWebMvc:
+	{GET [/swagger-ui.html]}: redirectToUi(HttpServletRequest)
+2026-08-12T14:29:14.053+06:30 TRACE 11100 --- [embos-backend] [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 
+	o.s.w.u.SwaggerConfigResource:
+	{GET [/v3/api-docs/swagger-config], produces [application/json]}: openapiJson(HttpServletRequest)
+2026-08-12T14:29:14.065+06:30 DEBUG 11100 --- [embos-backend] [           main] s.w.s.m.m.a.RequestMappingHandlerMapping : 63 mappings in 'requestMappingHandlerMapping'
+2026-08-12T14:29:14.222+06:30  INFO 11100 --- [embos-backend] [           main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@373c367, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@79690a0a, org.springframework.security.web.context.SecurityContextHolderFilter@627f678d, org.springframework.security.web.header.HeaderWriterFilter@40d0bff1, org.springframework.web.filter.CorsFilter@619944a7, org.springframework.security.web.authentication.logout.LogoutFilter@1eff74f2, com.embos.security.JwtAuthFilter@4ebd0b52, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@4b55652a, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@8c54f48, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@294aaa6, org.springframework.security.web.session.SessionManagementFilter@4283f29b, org.springframework.security.web.access.ExceptionTranslationFilter@537fb7bf, org.springframework.security.web.access.intercept.AuthorizationFilter@3129792a]
+2026-08-12T14:29:14.394+06:30 DEBUG 11100 --- [embos-backend] [           main] s.w.s.m.m.a.RequestMappingHandlerAdapter : ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2026-08-12T14:29:14.452+06:30 DEBUG 11100 --- [embos-backend] [           main] .m.m.a.ExceptionHandlerExceptionResolver : ControllerAdvice beans: 2 @ExceptionHandler, 1 ResponseBodyAdvice
+2026-08-12T14:29:14.777+06:30  INFO 11100 --- [embos-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path ''
+2026-08-12T14:29:14.813+06:30  INFO 11100 --- [embos-backend] [           main] com.embos.EmbosApplication               : Started EmbosApplication in 10.207 seconds (process running for 11.095)
+2026-08-12T19:32:57.886+06:30  WARN 11100 --- [embos-backend] [l-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=5h53s331ms858µs100ns).
+2026-08-12T19:35:01.219+06:30  INFO 11100 --- [embos-backend] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-08-12T19:35:01.221+06:30  INFO 11100 --- [embos-backend] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-08-12T19:35:01.224+06:30  INFO 11100 --- [embos-backend] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-08-12T19:35:01.358+06:30 TRACE 11100 --- [embos-backend] [nio-8080-exec-1] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.embos.controller.PublicEventsController#list()
+2026-08-12T19:35:01.677+06:30 DEBUG 11100 --- [embos-backend] [nio-8080-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-08-12T19:35:01.688+06:30 TRACE 11100 --- [embos-backend] [nio-8080-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [[PublicEventResponse[id=1, name=Tech Summit 2026, description=Annual tech conference, date=2026-09-15, venue=Convention Center, capacity=200, registrationDeadline=2026-09-01, status=PUBLISHED, registeredCount=7, registrationToken=beed2d89d2614541ab8371a2335ec41f], PublicEventResponse[id=7, name=Backup Test 2026, description=Backup feature verification, date=2026-10-01, venue=Main Hall, capacity=50, registrationDeadline=2026-09-20, status=PUBLISHED, registeredCount=0, registrationToken=f284b686b0a2473fbc82a5c5071bcac6], PublicEventResponse[id=8, name=AI & Cloud Innovation Conference 2026, description=A two-day conference featuring artificial intelligence, cloud computing, cybersecurity, and digital transformation with industry experts and networking sessions., date=2026-11-20, venue=Myanmar International Convention Centre (MICC II), capacity=300, registrationDeadline=2026-11-15, status=ONGOING, registeredCount=1, registrationToken=23d543e2aabb484a93939153855b831f], PublicEventResponse[id=11, name=Myanmar Software Developers Conference 2026, description=A professional conference for software developers featuring technical talks, coding workshops, networking sessions, and technology demonstrations., date=2026-12-05, venue=Yangon Convention Centre, capacity=350, registrationDeadline=2026-11-30, status=PUBLISHED, registeredCount=1, registrationToken=caa9674a76004e22828e7c12f6fd410a]]]
+2026-08-12T19:35:45.779+06:30 TRACE 11100 --- [embos-backend] [nio-8080-exec-3] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.embos.controller.PublicEventController#ticket(String, Long)
+2026-08-12T19:35:45.936+06:30 DEBUG 11100 --- [embos-backend] [nio-8080-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [*/*] and supported [application/json, application/*+json]
+2026-08-12T19:35:45.950+06:30 TRACE 11100 --- [embos-backend] [nio-8080-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [Response[id=13, name=Public Flow Test, email=publicflow@example.com, phone=, guestType=ONLINE, status=ATTENDED, createdAt=2026-08-12T13:38:05, updatedAt=2026-08-12T13:39:25]]
