@@ -1,4 +1,6 @@
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\event\GuestStatusChangedEvent.java
+C:\Users\PC\Documents\event\backend\src\main\java\com\embos\service\UserActivityService.java
+C:\Users\PC\Documents\event\backend\src\main\java\com\embos\service\AuditLogService.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\security\AppUserDetails.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\security\JwtService.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\dto\NotificationDtos.java
@@ -24,9 +26,11 @@ C:\Users\PC\Documents\event\backend\src\main\java\com\embos\config\SecurityConfi
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\entity\Task.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\service\BudgetService.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\mapper\UserMapper.java
+C:\Users\PC\Documents\event\backend\src\main\java\com\embos\entity\AuditLog.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\security\CustomUserDetailsService.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\controller\TaskController.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\entity\Expense.java
+C:\Users\PC\Documents\event\backend\src\main\java\com\embos\service\AnalyticsService.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\event\TaskAssignedEvent.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\repository\EventBackupRepository.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\service\RecoveryPointService.java
@@ -54,6 +58,7 @@ C:\Users\PC\Documents\event\backend\src\main\java\com\embos\exception\ConflictEx
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\controller\VendorController.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\controller\ReportController.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\controller\EventBackupController.java
+C:\Users\PC\Documents\event\backend\src\main\java\com\embos\repository\AuditLogRepository.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\controller\StaffController.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\dto\GuestDtos.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\dto\DashboardDtos.java
@@ -69,7 +74,9 @@ C:\Users\PC\Documents\event\backend\src\main\java\com\embos\entity\EventBackup.j
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\repository\StaffRepository.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\repository\ExpenseRepository.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\controller\PublicEventController.java
+C:\Users\PC\Documents\event\backend\src\main\java\com\embos\dto\AuditLogDtos.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\entity\Guest.java
+C:\Users\PC\Documents\event\backend\src\main\java\com\embos\dto\AnalyticsDtos.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\entity\RecoveryPoint.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\repository\GuestRepository.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\entity\Staff.java
@@ -79,6 +86,7 @@ C:\Users\PC\Documents\event\backend\src\main\java\com\embos\repository\UserRepos
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\entity\enums\PaymentStatus.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\repository\NotificationRepository.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\service\ExpenseService.java
+C:\Users\PC\Documents\event\backend\src\main\java\com\embos\dto\UserActivityDtos.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\mapper\VendorMapper.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\mapper\GuestMapper.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\event\EventStatusChangedEvent.java
@@ -86,6 +94,7 @@ C:\Users\PC\Documents\event\backend\src\main\java\com\embos\entity\Event.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\event\RecoveryPointRestoredEvent.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\dto\StaffDtos.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\service\StaffService.java
+C:\Users\PC\Documents\event\backend\src\main\java\com\embos\ai\JsonExtract.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\entity\enums\VendorStatus.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\controller\AuthController.java
 C:\Users\PC\Documents\event\backend\src\main\java\com\embos\entity\Vendor.java

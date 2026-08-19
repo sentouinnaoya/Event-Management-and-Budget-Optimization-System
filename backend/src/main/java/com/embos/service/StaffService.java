@@ -6,6 +6,7 @@ import com.embos.entity.Staff;
 import com.embos.exception.NotFoundException;
 import com.embos.mapper.StaffMapper;
 import com.embos.repository.StaffRepository;
+import com.embos.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,7 @@ public class StaffService {
 
     private final StaffRepository staffRepository;
     private final StaffMapper staffMapper;
+    private final AuditLogService auditLogService;
 
     @Transactional(readOnly = true)
     public List<StaffDtos.Response> list(Event event) {
@@ -36,7 +38,12 @@ public class StaffService {
                 .phone(request.phone())
                 .createdAt(LocalDateTime.now())
                 .build();
-        return staffMapper.toResponse(staffRepository.save(staff));
+        Staff saved = staffRepository.save(staff);
+        var u = SecurityUtils.currentUser();
+        auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
+                "STAFF_CREATED", "Staff", saved.getId(), saved.getName(),
+                "Added staff member: " + saved.getResponsibility());
+        return staffMapper.toResponse(saved);
     }
 
     @Transactional
@@ -45,12 +52,21 @@ public class StaffService {
         staff.setName(request.name().trim());
         staff.setResponsibility(request.responsibility().trim());
         staff.setPhone(request.phone());
-        return staffMapper.toResponse(staffRepository.save(staff));
+        Staff saved = staffRepository.save(staff);
+        var u = SecurityUtils.currentUser();
+        auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
+                "STAFF_UPDATED", "Staff", saved.getId(), saved.getName(),
+                "Updated staff member: " + saved.getResponsibility());
+        return staffMapper.toResponse(saved);
     }
 
     @Transactional
     public void delete(Event event, Long staffId) {
         Staff staff = getStaff(event, staffId);
+        var u = SecurityUtils.currentUser();
+        auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
+                "STAFF_DELETED", "Staff", staff.getId(), staff.getName(),
+                "Deleted staff member: " + staff.getResponsibility());
         staffRepository.delete(staff);
     }
 

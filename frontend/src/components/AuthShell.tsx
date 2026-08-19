@@ -24,42 +24,52 @@ const highlights = [
 export default function AuthShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen bg-slate-50">
-      <aside className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 p-12 text-white lg:flex">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-32 -left-16 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
+      <aside className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-indigo-900 p-12 text-slate-50 lg:flex">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -right-16 -top-24 select-none font-display text-[26rem] leading-none text-white/[0.04]"
+        >
+          E
+        </span>
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-indigo-400/40 to-transparent"
+        />
 
         <div className="relative">
           <Link href="/" className="flex items-center gap-2.5">
-            <BrandMark size="md" />
-            <span className="text-lg font-semibold tracking-tight">EMBOS</span>
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 font-display text-sm font-semibold text-white">
+              E
+            </span>
+            <span className="font-display text-lg font-semibold tracking-tight">EMBOS</span>
           </Link>
-          <h2 className="mt-10 max-w-md text-3xl font-bold leading-tight tracking-tight">
+          <h2 className="mt-12 max-w-md text-3xl font-medium leading-tight">
             Event management and budget optimization in one place.
           </h2>
-          <p className="mt-3 max-w-md text-sm text-indigo-100">
+          <p className="mt-4 max-w-md text-sm leading-relaxed text-indigo-200/90">
             Plan events, control spending, manage guests and vendors, and stay
             on top of every detail.
           </p>
         </div>
 
-        <ul className="relative space-y-4">
+        <ul className="relative space-y-5">
           {highlights.map((h) => {
             const Icon = h.icon;
             return (
               <li key={h.title} className="flex items-start gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.06] text-indigo-100">
                   <Icon className="h-4 w-4" />
                 </span>
                 <div>
-                  <p className="text-sm font-semibold">{h.title}</p>
-                  <p className="text-xs text-indigo-200">{h.text}</p>
+                  <p className="text-sm font-medium text-slate-50">{h.title}</p>
+                  <p className="text-xs leading-relaxed text-indigo-200/80">{h.text}</p>
                 </div>
               </li>
             );
           })}
         </ul>
 
-        <p className="relative text-xs text-indigo-200">
+        <p className="relative text-xs text-indigo-200/70">
           © {new Date().getFullYear()} EMBOS · Event Management &amp; Budget
           Optimization System
         </p>

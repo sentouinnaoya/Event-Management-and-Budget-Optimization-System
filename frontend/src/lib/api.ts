@@ -31,6 +31,9 @@ export const baseApi = createApi({
     "RecoveryPoints",
     "Logs",
     "Notifications",
+    "AuditLogs",
+    "Analytics",
+    "UserActivity",
   ],
   endpoints: () => ({}),
 });

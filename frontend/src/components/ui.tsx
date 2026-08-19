@@ -22,7 +22,7 @@ export function BrandMark({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
   return (
     <span
       className={cn(
-        "flex shrink-0 items-center justify-center bg-gradient-to-br from-indigo-500 to-indigo-700 font-bold text-white shadow-sm",
+        "flex shrink-0 items-center justify-center bg-indigo-700 font-display font-semibold text-white shadow-sm",
         sizes[size]
       )}
     >
@@ -218,7 +218,7 @@ const badgeTones: Record<Tone, string> = {
   red: "bg-red-100 text-red-700",
   blue: "bg-blue-100 text-blue-700",
   indigo: "bg-indigo-100 text-indigo-700",
-  purple: "bg-purple-100 text-purple-700",
+  purple: "bg-indigo-100 text-indigo-700",
 };
 
 const badgeDotTones: Record<Tone, string> = {
@@ -228,7 +228,7 @@ const badgeDotTones: Record<Tone, string> = {
   red: "bg-red-500",
   blue: "bg-blue-500",
   indigo: "bg-indigo-500",
-  purple: "bg-purple-500",
+  purple: "bg-indigo-500",
 };
 
 export function Badge({
@@ -353,7 +353,7 @@ const statAccents: Record<string, string> = {
   amber: "bg-amber-50 text-amber-600",
   emerald: "bg-emerald-50 text-emerald-600",
   red: "bg-red-50 text-red-600",
-  purple: "bg-purple-50 text-purple-600",
+  purple: "bg-indigo-50 text-indigo-600",
   slate: "bg-slate-100 text-slate-600",
 };
 
@@ -385,7 +385,7 @@ export function StatCard({
           {icon}
         </span>
       </div>
-      <p className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+      <p className="mt-2 font-display text-2xl font-semibold tracking-tight text-slate-900">
         {value}
       </p>
       {sub && <p className="mt-1 text-xs text-slate-500">{sub}</p>}
@@ -432,7 +432,9 @@ export function Modal({
 export function formatMoney(value?: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
+    currency: "MMK",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(value ?? 0);
 }
 

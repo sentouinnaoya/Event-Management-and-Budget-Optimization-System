@@ -47,12 +47,18 @@ export default function RegisterPage() {
 
   return (
     <AuthShell>
+      <Link
+        href="/"
+        className="mb-6 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
+      >
+        ← Back to home
+      </Link>
       <div className="rounded-2xl bg-white p-8 shadow-sm">
         <div className="mb-8 text-center">
-          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-xl font-bold text-white lg:hidden">
+          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-700 font-display text-xl font-semibold text-white lg:hidden">
             E
           </span>
-          <h1 className="mt-4 text-2xl font-bold text-slate-900">
+          <h1 className="mt-4 font-display text-2xl font-medium text-slate-900">
             Create your account
           </h1>
           <p className="mt-1 text-sm text-slate-500">

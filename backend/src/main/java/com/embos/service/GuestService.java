@@ -14,7 +14,9 @@ import com.embos.exception.NotFoundException;
 import com.embos.mapper.GuestMapper;
 import com.embos.repository.EventRepository;
 import com.embos.repository.GuestRepository;
+import com.embos.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,7 +38,9 @@ public class GuestService {
     private final EventRepository eventRepository;
     private final GuestMapper guestMapper;
     private final EventLogService eventLogService;
+    private final AuditLogService auditLogService;
     private final ApplicationEventPublisher eventPublisher;
+    private final ObjectProvider<AiAdvisorService> aiAdvisorProvider;
 
     @Transactional(readOnly = true)
     public List<GuestDtos.Response> list(Event event) {
@@ -64,11 +68,16 @@ public class GuestService {
         Guest saved = guestRepository.save(guest);
         eventLogService.log(event, "GUEST_APPROVED",
                 "Manually invited and approved " + saved.getName() + " (" + saved.getEmail() + ")", actor);
+        var u = SecurityUtils.currentUser();
+        auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
+                "GUEST_ADDED", "Guest", saved.getId(), saved.getName(),
+                "Manually added guest " + saved.getEmail());
         eventPublisher.publishEvent(new GuestStatusChangedEvent(
                 event.getId(), saved.getId(), saved.getName(), saved.getEmail(),
                 event.getName(), event.getRegistrationToken(),
                 saved.getRegistrationCode(), GuestStatus.APPROVED.name(),
                 event.getDate(), event.getVenue()));
+        AiAdvisorService.scheduleAfterCommit(aiAdvisorProvider, event);
         return guestMapper.toResponse(saved);
     }
 
@@ -88,11 +97,17 @@ public class GuestService {
             eventLogService.log(event, newStatus == GuestStatus.APPROVED ? "GUEST_APPROVED" : "GUEST_REJECTED",
                     (newStatus == GuestStatus.APPROVED ? "Approved" : "Rejected") + " guest "
                             + guest.getName() + " (" + guest.getEmail() + ")", actor);
+            var u = SecurityUtils.currentUser();
+            auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
+                    newStatus == GuestStatus.APPROVED ? "GUEST_APPROVED" : "GUEST_REJECTED",
+                    "Guest", guest.getId(), guest.getName(),
+                    (newStatus == GuestStatus.APPROVED ? "Approved" : "Rejected") + " guest " + guest.getEmail());
             eventPublisher.publishEvent(new GuestStatusChangedEvent(
                     event.getId(), guest.getId(), guest.getName(), guest.getEmail(),
                     event.getName(), event.getRegistrationToken(),
                     guest.getRegistrationCode(), newStatus.name(),
                     event.getDate(), event.getVenue()));
+            AiAdvisorService.scheduleAfterCommit(aiAdvisorProvider, event);
         }
         return response;
     }

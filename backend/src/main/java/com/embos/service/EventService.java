@@ -30,6 +30,7 @@ public class EventService {
     private final EventRepository eventRepository;
     private final EventMapper eventMapper;
     private final EventLogService eventLogService;
+    private final AuditLogService auditLogService;
     private final ApplicationEventPublisher eventPublisher;
 
     private static final Map<EventStatus, Set<EventStatus>> TRANSITIONS = new EnumMap<>(EventStatus.class);
@@ -80,7 +81,10 @@ public class EventService {
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
-        return eventMapper.toResponse(eventRepository.save(event));
+        Event saved = eventRepository.save(event);
+        auditLogService.log(currentUser.getId(), currentUser.getFullName(), currentUser.getRole().name(),
+                "EVENT_CREATED", "Event", saved.getId(), saved.getName(), "Created event");
+        return eventMapper.toResponse(saved);
     }
 
     @Transactional
@@ -95,12 +99,17 @@ public class EventService {
         event.setCapacity(request.capacity());
         event.setRegistrationDeadline(request.registrationDeadline());
         event.setUpdatedAt(LocalDateTime.now());
-        return eventMapper.toResponse(eventRepository.save(event));
+        Event saved = eventRepository.save(event);
+        auditLogService.log(currentUser.getId(), currentUser.getFullName(), currentUser.getRole().name(),
+                "EVENT_UPDATED", "Event", saved.getId(), saved.getName(), "Updated event");
+        return eventMapper.toResponse(saved);
     }
 
     @Transactional
     public void delete(Long id, User currentUser) {
         Event event = getOwnedEvent(id, currentUser);
+        auditLogService.log(currentUser.getId(), currentUser.getFullName(), currentUser.getRole().name(),
+                "EVENT_DELETED", "Event", event.getId(), event.getName(), "Deleted event");
         eventRepository.delete(event);
     }
 
@@ -116,6 +125,8 @@ public class EventService {
         event.setUpdatedAt(LocalDateTime.now());
         EventDtos.Response response = eventMapper.toResponse(eventRepository.save(event));
         eventLogService.log(event, "PUBLISHED", "Event published", currentUser.getFullName());
+        auditLogService.log(currentUser.getId(), currentUser.getFullName(), currentUser.getRole().name(),
+                "EVENT_PUBLISHED", "Event", event.getId(), event.getName(), "Event published");
         publishStatusChanged(event, previous, EventStatus.PUBLISHED);
         return response;
     }
@@ -149,6 +160,8 @@ public class EventService {
         String message = "Status changed from " + current + " to " + newStatus
                 + (reason != null && !reason.isBlank() ? " — " + reason : "");
         eventLogService.log(event, "STATUS_CHANGED", message, currentUser.getFullName());
+        auditLogService.log(currentUser.getId(), currentUser.getFullName(), currentUser.getRole().name(),
+                "EVENT_STATUS_CHANGED", "Event", event.getId(), event.getName(), message);
         publishStatusChanged(event, current, newStatus);
         return response;
     }

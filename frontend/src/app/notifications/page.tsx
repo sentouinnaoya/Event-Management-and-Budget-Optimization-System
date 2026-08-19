@@ -104,7 +104,7 @@ export default function NotificationsPage() {
         <div className="space-y-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+              <h1 className="font-display text-2xl font-medium tracking-tight text-slate-900">
                 Notifications
               </h1>
               <p className="text-sm text-slate-500">

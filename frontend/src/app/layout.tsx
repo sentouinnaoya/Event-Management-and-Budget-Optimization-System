@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Fraunces, Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 import Providers from "../components/providers";
@@ -7,6 +7,13 @@ import Providers from "../components/providers";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: "swap",
+});
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-fraunces",
   display: "swap",
 });
 
@@ -23,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} min-h-screen bg-slate-50 text-slate-900 antialiased`}>
+      <body className={`${inter.variable} ${fraunces.variable} min-h-screen bg-slate-50 text-slate-900 antialiased`}>
         <Providers>{children}</Providers>
         <Toaster
           richColors

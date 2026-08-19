@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Bell, Inbox, Trash2 } from "lucide-react";
+import { ArrowRight, Bell, Inbox, Trash2 } from "lucide-react";
 import {
   useDeleteNotificationMutation,
   useGetUnreadNotificationCountQuery,
@@ -155,6 +155,17 @@ export default function NotificationsPanel() {
                 </div>
               ))}
           </div>
+
+          <button
+            onClick={() => {
+              setOpen(false);
+              router.push("/notifications");
+            }}
+            className="flex w-full items-center justify-center gap-1.5 border-t border-slate-100 px-4 py-3 text-sm font-medium text-indigo-700 transition-colors hover:bg-indigo-50/60"
+          >
+            View all notifications
+            <ArrowRight className="h-4 w-4" />
+          </button>
         </div>
       )}
     </div>

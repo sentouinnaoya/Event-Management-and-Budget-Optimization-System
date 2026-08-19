@@ -8,4 +8,6 @@ import java.util.List;
 public interface StaffRepository extends JpaRepository<Staff, Long> {
 
     List<Staff> findAllByEventIdOrderByCreatedAtAsc(Long eventId);
+
+    long countByEventId(Long eventId);
 }

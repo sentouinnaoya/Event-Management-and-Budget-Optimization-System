@@ -66,7 +66,7 @@ function NewEventForm() {
         >
           &larr; Back to events
         </Link>
-        <h1 className="mt-2 text-xl font-bold text-slate-900">New event</h1>
+        <h1 className="mt-2 font-display text-xl font-medium text-slate-900">New event</h1>
         <p className="text-sm text-slate-500">
           Enter the event details. The event is saved as a draft until published.
         </p>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   CalendarDays,
+  ArrowRight,
   ChevronRight,
   MapPin,
   Search,
@@ -39,21 +40,22 @@ export default function BrowsePage() {
           <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-indigo-700 transition-colors hover:bg-indigo-50/60"
             >
               Home
+              <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </div>
       </header>
 
-      <section className="bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800">
+      <section className="bg-indigo-800">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
           <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-indigo-100">
             <Ticket className="h-3.5 w-3.5" />
             Open registration
           </span>
-          <h1 className="mt-4 max-w-xl text-3xl font-bold tracking-tight text-white sm:text-4xl">
+          <h1 className="mt-4 max-w-xl font-display text-3xl font-medium tracking-tight text-white sm:text-4xl">
             Find your next event
           </h1>
           <p className="mt-2 max-w-xl text-sm text-indigo-100 sm:text-base">

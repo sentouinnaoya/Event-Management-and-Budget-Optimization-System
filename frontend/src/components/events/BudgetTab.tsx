@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,13 +14,14 @@ import {
   YAxis,
 } from "recharts";
 import { categorySchema, type CategoryInputZ } from "../../lib/schemas";
-import type { AiInsight } from "../../lib/types";
+import type { AiInsight, BudgetCategory } from "../../lib/types";
 import {
   useAddCategoryMutation,
   useBudgetSummaryQuery,
   useDeleteCategoryMutation,
   useGenerateBudgetInsightsMutation,
   useGetBudgetInsightsQuery,
+  useUpdateCategoryMutation,
 } from "../../lib/apiSlices";
 import {
   Button,
@@ -30,6 +31,7 @@ import {
   FieldError,
   Input,
   Label,
+  Skeleton,
   Spinner,
   StatusBadge,
   apiError,
@@ -40,13 +42,32 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
   const { data, isLoading } = useBudgetSummaryQuery(eventId);
   const [addCategory, { isLoading: adding }] = useAddCategoryMutation();
   const [removeCategory] = useDeleteCategoryMutation();
+  const [updateCategory, { isLoading: saving }] = useUpdateCategoryMutation();
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<BudgetCategory | null>(null);
   const { data: insights, isLoading: loadingInsights, refetch } =
     useGetBudgetInsightsQuery(eventId);
   const [generateInsights] = useGenerateBudgetInsightsMutation();
   const [aiError, setAiError] = useState<string | null>(null);
   const [localGenerating, setLocalGenerating] = useState(false);
   const generating = localGenerating || (insights?.generating ?? false);
+  const [elapsed, setElapsed] = useState(0);
+  const elapsedStartRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!generating) {
+      elapsedStartRef.current = null;
+      setElapsed(0);
+      return;
+    }
+    elapsedStartRef.current = elapsedStartRef.current ?? Date.now();
+    const id = setInterval(() => {
+      setElapsed(
+        Math.floor((Date.now() - (elapsedStartRef.current ?? Date.now())) / 1000)
+      );
+    }, 1000);
+    return () => clearInterval(id);
+  }, [generating]);
 
   useEffect(() => {
     if (!generating) return;
@@ -80,19 +101,38 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
 
   async function onSubmit(input: CategoryInputZ) {
     try {
-      await addCategory({
-        eventId,
-        body: {
-          name: input.name,
-          allocatedAmount: input.allocatedAmount,
-          alertThresholdPct: input.alertThresholdPct,
-        },
-      }).unwrap();
+      const body = {
+        name: input.name,
+        allocatedAmount: input.allocatedAmount,
+        alertThresholdPct: input.alertThresholdPct,
+      };
+      if (editing) {
+        await updateCategory({ eventId, id: editing.id, body }).unwrap();
+        setEditing(null);
+      } else {
+        await addCategory({ eventId, body }).unwrap();
+      }
       reset();
       setError(null);
     } catch (e) {
       setError(apiError(e));
     }
+  }
+
+  function startEdit(c: BudgetCategory) {
+    setEditing(c);
+    setError(null);
+    reset({
+      name: c.name,
+      allocatedAmount: c.allocatedAmount,
+      alertThresholdPct: c.alertThresholdPct,
+    });
+  }
+
+  function cancelEdit() {
+    setEditing(null);
+    setError(null);
+    reset();
   }
 
   async function onGenerate() {
@@ -175,7 +215,10 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
-          <CardHeader title="Add budget category" />
+          <CardHeader
+            title={editing ? "Edit budget category" : "Add budget category"}
+            subtitle={editing ? `Editing "${editing.name}"` : undefined}
+          />
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
             <div>
               <Label required>Category name</Label>
@@ -213,9 +256,20 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
                 {error}
               </div>
             )}
-            <Button type="submit" loading={adding}>
-              Add category
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button type="submit" loading={adding || saving}>
+                {editing ? "Save changes" : "Add category"}
+              </Button>
+              {editing && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={cancelEdit}
+                >
+                  Cancel
+                </Button>
+              )}
+            </div>
           </form>
         </Card>
 
@@ -308,15 +362,23 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
                       <StatusBadge status={c.alertLevel} />
                     </td>
                     <td className="py-3 text-right">
-                      <button
-                        onClick={() => {
-                          if (confirm(`Delete category "${c.name}"?`))
-                            removeCategory({ eventId, id: c.id });
-                        }}
-                        className="text-xs font-medium text-red-600 hover:text-red-700"
-                      >
-                        Delete
-                      </button>
+                      <div className="flex items-center justify-end gap-3">
+                        <button
+                          onClick={() => startEdit(c)}
+                          className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`Delete category "${c.name}"?`))
+                              removeCategory({ eventId, id: c.id });
+                          }}
+                          className="text-xs font-medium text-red-600 hover:text-red-700"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -327,6 +389,12 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
       </Card>
 
       <Card className="border-indigo-200 bg-indigo-50/40">
+        {generating && (
+          <div className="mb-4 h-1 w-full overflow-hidden rounded-full bg-indigo-100">
+            <div className="h-full w-1/3 rounded-full bg-indigo-600 animate-indeterminate" />
+          </div>
+        )}
+
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <CardHeader
@@ -340,15 +408,21 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
             </p>
           </div>
           <Button onClick={onGenerate} loading={generating}>
-            {generating ? "Generating…" : "Generate with AI"}
+            {generating ? "Generating…" : "Generate"}
           </Button>
         </div>
 
         {generating && (
-          <p className="mt-2 text-xs font-medium text-indigo-600">
-            AI is analyzing your budget decisions — this usually takes about
-            30 seconds.
-          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-medium text-indigo-600">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-indigo-600" />
+            </span>
+            {insights && insights.insights.length > 0
+              ? "Updating your recommendations…"
+              : "Analyzing your budget decisions…"}
+            <span className="text-slate-400">· {elapsed}s</span>
+          </div>
         )}
 
         {aiError && (
@@ -362,32 +436,67 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
             <Spinner />
           </div>
         ) : insights && insights.insights.length > 0 ? (
+          <>
+            {generating && (
+              <p className="mt-3 text-xs text-slate-500">
+                The first analysis takes about 30 seconds — after that,
+                recommendations refresh automatically as your budget changes.
+              </p>
+            )}
+            <div className="mt-4 space-y-4">
+              {insights.insights.map((insight, i) => (
+                <InsightCard key={i} insight={insight} />
+              ))}
+            </div>
+          </>
+        ) : generating ? (
           <div className="mt-4 space-y-4">
-            {insights.insights.map((insight, i) => (
-              <InsightCard key={i} insight={insight} />
-            ))}
+            <InsightSkeleton />
+            <InsightSkeleton />
+            <p className="text-xs text-slate-500">
+              The first analysis usually takes about 30 seconds — you can keep
+              working while it runs.
+            </p>
           </div>
         ) : (
           <div className="mt-4">
-            {generating ? (
-              <div className="flex items-center justify-center gap-2 py-8 text-sm text-slate-500">
-                <Spinner /> Generating recommendations…
-              </div>
-            ) : (
-              <EmptyState
-                title="No analysis yet"
-                description={
-                  insights &&
-                  insights.actionCount === 0 &&
-                  data.categories.length === 0
-                    ? "The AI analyzes your budget decisions once you've made some — add budget categories, vendors, or expenses, then click Generate with AI."
-                    : "Click Generate with AI to get budget optimization recommendations."
-                }
-              />
-            )}
+            <EmptyState
+              title="No analysis yet"
+              description={
+                insights &&
+                insights.actionCount === 0 &&
+                data.categories.length === 0
+                  ? "The AI analyzes your budget decisions once you've made some — add budget categories, vendors, or expenses, then click Generate with AI."
+                  : "Click Generate with AI to get budget optimization recommendations."
+              }
+            />
           </div>
         )}
       </Card>
+    </div>
+  );
+}
+
+function InsightSkeleton() {
+  return (
+    <div className="rounded-lg border border-indigo-200 bg-white p-4">
+      <div className="flex items-center justify-between gap-2">
+        <Skeleton className="h-4 w-44" />
+        <Skeleton className="h-5 w-16 rounded-full" />
+      </div>
+      <Skeleton className="mt-3 h-3 w-full" />
+      <Skeleton className="mt-2 h-3 w-3/4" />
+      <div className="mt-4 space-y-2">
+        <div className="flex gap-2">
+          <Skeleton className="h-5 w-5 shrink-0 rounded-full" />
+          <Skeleton className="h-3 w-1/2" />
+        </div>
+        <div className="flex gap-2">
+          <Skeleton className="h-5 w-5 shrink-0 rounded-full" />
+          <Skeleton className="h-3 w-2/5" />
+        </div>
+      </div>
+      <Skeleton className="mt-4 h-3 w-1/3" />
     </div>
   );
 }

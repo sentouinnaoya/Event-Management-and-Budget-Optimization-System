@@ -60,7 +60,7 @@ export default function PublicRegisterPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-slate-50 to-white">
+      <div className="flex min-h-screen items-center justify-center bg-[#faf9f7]">
         <Spinner />
       </div>
     );
@@ -68,9 +68,9 @@ export default function PublicRegisterPage() {
 
   if (error || !event) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-slate-50 to-white px-4">
+      <div className="flex min-h-screen items-center justify-center bg-[#faf9f7] px-4">
         <Card className="w-full max-w-md text-center">
-          <h1 className="text-lg font-bold text-slate-900">Event not found</h1>
+          <h1 className="font-display text-lg font-medium text-slate-900">Event not found</h1>
           <p className="mt-1 text-sm text-slate-500">
             This registration link is invalid or the event no longer exists.
           </p>
@@ -83,7 +83,7 @@ export default function PublicRegisterPage() {
     event.status === "PUBLISHED" || event.status === "ONGOING";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-slate-50 to-white px-4 py-10">
+    <div className="min-h-screen bg-[#faf9f7] px-4 py-10">
       <div className="mx-auto w-full max-w-lg space-y-5">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
@@ -91,18 +91,18 @@ export default function PublicRegisterPage() {
           </Link>
           <Link
             href="/browse"
-            className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+            className="text-sm font-medium text-indigo-700 hover:text-indigo-600"
           >
             Browse events →
           </Link>
         </div>
 
         <Card className="overflow-hidden p-0">
-          <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 px-6 py-6 text-white">
+          <div className="bg-indigo-800 px-6 py-6 text-white">
             <span className="inline-flex items-center rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-medium text-indigo-100">
               Guest registration
             </span>
-            <h1 className="mt-2 text-2xl font-bold tracking-tight">
+            <h1 className="mt-2 font-display text-2xl font-medium tracking-tight">
               {event.name}
             </h1>
             <div className="mt-4 flex flex-wrap gap-2">
@@ -150,7 +150,7 @@ export default function PublicRegisterPage() {
             <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
               <CheckCircle2 className="h-6 w-6" />
             </span>
-            <h2 className="mt-3 text-lg font-bold text-emerald-800">
+            <h2 className="mt-3 font-display text-lg font-medium text-emerald-800">
               Registration successful!
             </h2>
             <p className="mt-1 text-sm text-emerald-700">

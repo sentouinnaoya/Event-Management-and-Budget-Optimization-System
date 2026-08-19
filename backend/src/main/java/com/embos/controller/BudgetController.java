@@ -17,16 +17,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 @Slf4j
 @RestController
 @RequestMapping("/api/events/{eventId}/budget")
 @RequiredArgsConstructor
 public class BudgetController {
-
-    private final ExecutorService aiExecutor = Executors.newFixedThreadPool(2);
 
     private final EventService eventService;
     private final BudgetService budgetService;
@@ -53,25 +48,7 @@ public class BudgetController {
             @AuthenticationPrincipal AppUserDetails principal,
             @PathVariable Long eventId) {
         Event event = eventService.getOwnedEvent(eventId, principal.user());
-        if (!aiAdvisorService.markGenerating(event.getId())) {
-            return ResponseEntity.ok(aiAdvisorService.getLatest(event));
-        }
-        AiDtos.InsightsResponse snapshot = aiAdvisorService.getLatest(event);
-        try {
-            aiExecutor.submit(() -> {
-                try {
-                    aiAdvisorService.generate(event);
-                } catch (Exception e) {
-                    log.error("Async AI generation failed for event {}", event.getId(), e);
-                } finally {
-                    aiAdvisorService.clearGenerating(event.getId());
-                }
-            });
-        } catch (Exception e) {
-            aiAdvisorService.clearGenerating(event.getId());
-            throw e;
-        }
-        return ResponseEntity.ok(new AiDtos.InsightsResponse(
-                snapshot.insights(), snapshot.actionCount(), snapshot.generatedAt(), true));
+        aiAdvisorService.generateNow(event);
+        return ResponseEntity.ok(aiAdvisorService.getLatest(event));
     }
 }

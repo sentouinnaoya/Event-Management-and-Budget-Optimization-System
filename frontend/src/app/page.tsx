@@ -126,31 +126,29 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="relative overflow-hidden bg-gradient-to-b from-indigo-50 via-white to-white">
-        <div className="pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full bg-indigo-200/40 blur-3xl" />
-        <div className="pointer-events-none absolute -right-24 top-32 h-96 w-96 rounded-full bg-purple-200/40 blur-3xl" />
+      <section className="relative overflow-hidden bg-[#faf9f7]">
+        <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-indigo-100/50 blur-3xl" />
+        <div className="pointer-events-none absolute -right-32 top-24 h-96 w-96 rounded-full bg-indigo-200/30 blur-3xl" />
 
-        <div className="relative mx-auto max-w-6xl px-4 pb-20 pt-20 sm:px-6 sm:pt-28">
+        <div className="relative mx-auto max-w-6xl px-4 pb-24 pt-20 sm:px-6 sm:pt-28">
           <div className="mx-auto max-w-3xl text-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200/70 bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-800">
               <Sparkles className="h-3.5 w-3.5" />
               Plan · Organize · Execute · Monitor
             </span>
-            <h1 className="mt-6 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+            <h1 className="mt-7 text-4xl font-medium leading-tight text-slate-900 sm:text-5xl">
               Manage events and budgets in{" "}
-              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                one place
-              </span>
+              <em className="font-display italic text-indigo-700">one place</em>
             </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-600">
+            <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-slate-600">
               EMBOS is an event management and budget optimization system that
               helps you plan events, control spending, manage guests and
               vendors, and stay on top of every detail.
             </p>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
               <Link
                 href={authed ? "/dashboard" : "/register"}
-                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-3 text-sm font-medium text-white shadow-sm transition-all hover:bg-indigo-500 active:scale-[0.98]"
+                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-3 text-sm font-medium text-white shadow-sm transition-all hover:bg-indigo-700 active:scale-[0.98]"
               >
                 {authed ? "Go to dashboard" : "Start for free"}
                 <ArrowRight className="h-4 w-4" />
@@ -174,12 +172,12 @@ export default function Home() {
             return (
               <div
                 key={f.title}
-                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card transition-all hover:shadow-card-hover"
               >
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700">
                   <Icon className="h-5 w-5" />
                 </span>
-                <h3 className="mt-4 text-base font-semibold text-slate-900">
+                <h3 className="mt-5 text-lg font-medium text-slate-900">
                   {f.title}
                 </h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-600">
@@ -193,7 +191,7 @@ export default function Home() {
 
       <section className="bg-slate-50 py-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <h2 className="text-center text-3xl font-bold tracking-tight text-slate-900">
+          <h2 className="text-center font-display text-3xl font-medium tracking-tight text-slate-900">
             How it works
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-center text-slate-600">
@@ -202,10 +200,10 @@ export default function Home() {
           <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {steps.map((s) => (
               <div key={s.step} className="relative">
-                <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 text-sm font-bold text-white shadow-sm">
+                <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-700 font-display text-sm font-semibold text-white shadow-sm">
                   {s.step}
                 </span>
-                <h3 className="mt-4 text-base font-semibold text-slate-900">
+                <h3 className="mt-4 font-display text-lg font-medium text-slate-900">
                   {s.title}
                 </h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-600">
@@ -218,25 +216,25 @@ export default function Home() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-        <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 to-purple-700 px-6 py-14 text-center sm:px-12">
-          <h2 className="text-3xl font-bold tracking-tight text-white">
+        <div className="overflow-hidden rounded-3xl bg-indigo-800 px-6 py-14 text-center sm:px-12">
+          <h2 className="font-display text-3xl font-medium tracking-tight text-white">
             Ready to plan your next event?
           </h2>
-          <p className="mx-auto mt-3 max-w-xl text-indigo-100">
+          <p className="mx-auto mt-3 max-w-xl text-indigo-200">
             Create your account and start building events with full budget
             control today.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               href={authed ? "/dashboard" : "/register"}
-              className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-semibold text-indigo-700 transition-all hover:bg-indigo-50 active:scale-[0.98]"
+              className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-semibold text-indigo-800 transition-all hover:bg-indigo-50 active:scale-[0.98]"
             >
               {authed ? "Go to dashboard" : "Create an account"}
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
               href="/browse"
-              className="inline-flex items-center gap-2 rounded-lg border border-indigo-300 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-white/10 active:scale-[0.98]"
+              className="inline-flex items-center gap-2 rounded-lg border border-indigo-400/40 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-white/10 active:scale-[0.98]"
             >
               <Ticket className="h-4 w-4" />
               Browse events

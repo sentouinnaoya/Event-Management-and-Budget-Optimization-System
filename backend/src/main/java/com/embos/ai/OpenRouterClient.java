@@ -23,7 +23,7 @@ public class OpenRouterClient {
 
     private static final String CHAT_PATH = "/chat/completions";
     private static final int MAX_ATTEMPTS = 2;
-    private static final int MAX_TOKENS = 2000;
+    private static final int MAX_TOKENS = 2500;
     private static final List<Integer> RETRYABLE_STATUS = List.of(429, 500, 502, 503, 504);
 
     private final HttpClient httpClient = HttpClient.newBuilder()
@@ -109,15 +109,7 @@ public class OpenRouterClient {
             if (content.isMissingNode()) {
                 return "";
             }
-            String text = content.asText();
-            int start = text.indexOf('{');
-            int end = text.lastIndexOf('}');
-            if (start < 0 || end <= start) {
-                return "";
-            }
-            String json = text.substring(start, end + 1);
-            objectMapper.readTree(json);
-            return json;
+            return JsonExtract.findObject(objectMapper, content.asText(), "insights");
         } catch (Exception e) {
             return "";
         }

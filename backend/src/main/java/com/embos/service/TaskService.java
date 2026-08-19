@@ -11,6 +11,7 @@ import com.embos.exception.BadRequestException;
 import com.embos.exception.NotFoundException;
 import com.embos.mapper.TaskMapper;
 import com.embos.repository.TaskRepository;
+import com.embos.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final StaffService staffService;
     private final TaskMapper taskMapper;
+    private final AuditLogService auditLogService;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
@@ -58,6 +60,10 @@ public class TaskService {
                     event.getId(), event.getOrganizer().getId(), event.getName(),
                     saved.getTitle(), saved.getAssignedStaff().getName()));
         }
+        var u = SecurityUtils.currentUser();
+        auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
+                "TASK_CREATED", "Task", saved.getId(), saved.getTitle(),
+                "Created task" + (saved.getAssignedStaff() != null ? " assigned to " + saved.getAssignedStaff().getName() : ""));
         return taskMapper.toResponse(saved);
     }
 
@@ -73,19 +79,33 @@ public class TaskService {
         task.setDueDate(request.dueDate());
         task.setPriority(parsePriority(request.priority()));
         applyStatus(task, parseStatus(request.status()));
-        return taskMapper.toResponse(taskRepository.save(task));
+        Task saved = taskRepository.save(task);
+        var u = SecurityUtils.currentUser();
+        auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
+                "TASK_UPDATED", "Task", saved.getId(), saved.getTitle(),
+                "Updated task");
+        return taskMapper.toResponse(saved);
     }
 
     @Transactional
     public TaskDtos.Response updateStatus(Event event, Long taskId, String status) {
         Task task = getTask(event, taskId);
         applyStatus(task, parseStatus(status));
-        return taskMapper.toResponse(taskRepository.save(task));
+        Task saved = taskRepository.save(task);
+        var u = SecurityUtils.currentUser();
+        auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
+                "TASK_STATUS_CHANGED", "Task", saved.getId(), saved.getTitle(),
+                "Status changed to " + status.toUpperCase());
+        return taskMapper.toResponse(saved);
     }
 
     @Transactional
     public void delete(Event event, Long taskId) {
         Task task = getTask(event, taskId);
+        var u = SecurityUtils.currentUser();
+        auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
+                "TASK_DELETED", "Task", task.getId(), task.getTitle(),
+                "Deleted task");
         taskRepository.delete(task);
     }
 

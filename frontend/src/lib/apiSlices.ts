@@ -1,7 +1,11 @@
 import { baseApi } from "./api";
 import type {
   AiInsightsResponse,
+  AnalyticsData,
   AppNotification,
+  AuditLogEntry,
+  AuditLogPage,
+  AuditLogStats,
   AttendanceReport,
   AuthResponse,
   BudgetCategory,
@@ -31,6 +35,8 @@ import type {
   TaskInput,
   TaskStatus,
   UserInfo,
+  UserActivitySummary,
+  UserActivityDetail,
   Vendor,
   VendorInput,
   VendorReportData,
@@ -412,6 +418,38 @@ export const adminApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Auth"],
     }),
+    listAuditLogs: b.query<
+      AuditLogPage,
+      { page?: number; size?: number; action?: string; entityType?: string; userId?: number }
+    >({
+      query: ({ page = 0, size = 20, action, entityType, userId }) => ({
+        url: "/admin/audit-logs",
+        params: {
+          page,
+          size,
+          ...(action ? { action } : {}),
+          ...(entityType ? { entityType } : {}),
+          ...(userId ? { userId } : {}),
+        },
+      }),
+      providesTags: ["AuditLogs"],
+    }),
+    getAuditLogStats: b.query<AuditLogStats, void>({
+      query: () => "/admin/audit-logs/stats",
+      providesTags: ["AuditLogs"],
+    }),
+    getAnalytics: b.query<AnalyticsData, void>({
+      query: () => "/admin/analytics",
+      providesTags: ["Analytics"],
+    }),
+    listUserActivity: b.query<UserActivitySummary[], void>({
+      query: () => "/admin/users/activity",
+      providesTags: ["UserActivity"],
+    }),
+    getUserActivity: b.query<UserActivityDetail, number>({
+      query: (userId) => `/admin/users/${userId}/activity`,
+      providesTags: (_r, _e, userId) => [{ type: "UserActivity", id: userId }],
+    }),
   }),
 });
 
@@ -550,7 +588,15 @@ export const {
 
 export const { useGetDashboardQuery } = dashboardApi;
 
-export const { useListUsersQuery, useChangeUserRoleMutation } = adminApi;
+export const {
+  useListUsersQuery,
+  useChangeUserRoleMutation,
+  useListAuditLogsQuery,
+  useGetAuditLogStatsQuery,
+  useGetAnalyticsQuery,
+  useListUserActivityQuery,
+  useGetUserActivityQuery,
+} = adminApi;
 
 export const { useGetBackupQuery, useUpdateBackupMutation } = backupApi;
 

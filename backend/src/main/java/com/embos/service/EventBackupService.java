@@ -4,6 +4,7 @@ import com.embos.dto.EventBackupDtos;
 import com.embos.entity.Event;
 import com.embos.entity.EventBackup;
 import com.embos.repository.EventBackupRepository;
+import com.embos.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +18,7 @@ public class EventBackupService {
 
     private final EventBackupRepository eventBackupRepository;
     private final EventLogService eventLogService;
+    private final AuditLogService auditLogService;
 
     @Transactional(readOnly = true)
     public Optional<EventBackupDtos.Response> get(Event event) {
@@ -40,6 +42,10 @@ public class EventBackupService {
         backup.setUpdatedAt(LocalDateTime.now());
         eventLogService.log(event, "BACKUP_UPDATED",
                 created ? "Backup plan created" : "Backup plan updated", actor);
+        var u = SecurityUtils.currentUser();
+        auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
+                "BACKUP_UPDATED", "EventBackup", backup.getId(), event.getName(),
+                created ? "Created backup plan" : "Updated backup plan");
         return toResponse(eventBackupRepository.save(backup));
     }
 

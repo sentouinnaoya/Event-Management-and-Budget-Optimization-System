@@ -1,5 +1,6 @@
 package com.embos.service;
 
+import com.embos.ai.JsonExtract;
 import com.embos.ai.OpenRouterClient;
 import com.embos.dto.AiDtos;
 import com.embos.dto.BudgetDtos;
@@ -12,6 +13,7 @@ import com.embos.entity.enums.EventStatus;
 import com.embos.entity.enums.GuestStatus;
 import com.embos.repository.EventAiInsightRepository;
 import com.embos.repository.EventLogRepository;
+import com.embos.repository.EventRepository;
 import com.embos.repository.ExpenseRepository;
 import com.embos.repository.GuestRepository;
 import com.embos.repository.VendorRepository;
@@ -23,8 +25,13 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -37,6 +44,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -45,6 +56,7 @@ public class AiAdvisorService {
 
     private static final int MAX_INSIGHTS = 5;
     private static final int MAX_OPTIONS = 3;
+    private static final long AUTO_REFRESH_MIN_MILLIS = 20_000L;
 
     private static final List<String> BUDGET_ACTIONS = List.of(
             "EXPENSE_CREATED", "EXPENSE_UPDATED", "EXPENSE_DELETED",
@@ -57,11 +69,22 @@ public class AiAdvisorService {
     private final VendorRepository vendorRepository;
     private final GuestRepository guestRepository;
     private final EventLogRepository eventLogRepository;
+    private final EventRepository eventRepository;
     private final EventAiInsightRepository aiInsightRepository;
     private final OpenRouterClient openRouterClient;
     private final ObjectMapper objectMapper;
+    private final PlatformTransactionManager transactionManager;
 
     private final Set<Long> generating = ConcurrentHashMap.newKeySet();
+    private final Set<Long> refreshPending = ConcurrentHashMap.newKeySet();
+    private final Set<Long> deferredArmed = ConcurrentHashMap.newKeySet();
+    private final Map<Long, Long> lastAutoRefreshAt = new ConcurrentHashMap<>();
+    private final ExecutorService aiExecutor = Executors.newFixedThreadPool(2);
+    private final ScheduledExecutorService janitor = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "ai-refresh-janitor");
+        t.setDaemon(true);
+        return t;
+    });
 
     public boolean isGenerating(Long eventId) {
         return generating.contains(eventId);
@@ -73,6 +96,84 @@ public class AiAdvisorService {
 
     public void clearGenerating(Long eventId) {
         generating.remove(eventId);
+    }
+
+    public void generateNow(Event event) {
+        startRun(event, false);
+    }
+
+    public void autoRefresh(Event event) {
+        if (event == null) {
+            return;
+        }
+        Long eventId = event.getId();
+        long now = System.currentTimeMillis();
+        if (now - lastAutoRefreshAt.getOrDefault(eventId, 0L) < AUTO_REFRESH_MIN_MILLIS) {
+            refreshPending.add(eventId);
+            armDeferred(eventId);
+            return;
+        }
+        startRun(event, true);
+    }
+
+    private void startRun(Event event, boolean auto) {
+        Long eventId = event.getId();
+        if (!markGenerating(eventId)) {
+            refreshPending.add(eventId);
+            armDeferred(eventId);
+            return;
+        }
+        if (auto) {
+            lastAutoRefreshAt.put(eventId, System.currentTimeMillis());
+        }
+        aiExecutor.submit(() -> {
+            try {
+                TransactionTemplate txTemplate = new TransactionTemplate(transactionManager);
+                txTemplate.executeWithoutResult(status -> generate(event));
+            } catch (Exception e) {
+                log.error("Async AI generation failed for event {}", eventId, e);
+            } finally {
+                clearGenerating(eventId);
+                if (refreshPending.remove(eventId)) {
+                    startRun(event, false);
+                }
+            }
+        });
+    }
+
+    private void armDeferred(Long eventId) {
+        if (!deferredArmed.add(eventId)) {
+            return;
+        }
+        janitor.schedule(() -> {
+            deferredArmed.remove(eventId);
+            if (!refreshPending.contains(eventId)) {
+                return;
+            }
+            eventRepository.findById(eventId).ifPresent(this::autoRefresh);
+        }, AUTO_REFRESH_MIN_MILLIS, TimeUnit.MILLISECONDS);
+    }
+
+    public static void scheduleAfterCommit(ObjectProvider<AiAdvisorService> provider, Event event) {
+        if (event == null) {
+            return;
+        }
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    AiAdvisorService service = provider.getIfAvailable();
+                    if (service != null) {
+                        service.autoRefresh(event);
+                    }
+                }
+            });
+        } else {
+            AiAdvisorService service = provider.getIfAvailable();
+            if (service != null) {
+                service.autoRefresh(event);
+            }
+        }
     }
 
     @Transactional(readOnly = true)
@@ -88,7 +189,7 @@ public class AiAdvisorService {
     public AiDtos.InsightsResponse generate(Event event) {
         List<EventLog> actions = eventLogRepository.findAllByEventIdOrderByCreatedAtDesc(event.getId()).stream()
                 .filter(log -> BUDGET_ACTIONS.contains(log.getAction()))
-                .limit(30)
+                .limit(20)
                 .toList();
         if (!hasBudgetData(event, actions)) {
             return new AiDtos.InsightsResponse(List.of(), 0, null, false);
@@ -134,13 +235,19 @@ public class AiAdvisorService {
                 "options": [{"label": string, "description": string, "estimatedImpact": string}], \
                 "recommendedOption": string, "impactEstimate": string}]}
                 Focus on: vendor cost comparisons within the same service type, budget reallocation between \
-                categories, overspend recovery, and savings opportunities. Provide 2-3 concrete alternative \
-                options per insight and 2-3 insights. Use ONLY the provided data; never invent vendors, \
-                categories, prices, or numbers. Keep summaries under 250 characters. estimatedImpact states \
-                the expected financial effect.""";
+                categories, overspend recovery, and savings opportunities. Provide exactly 2 insights, each with \
+                2 concrete alternative options. Use ONLY the provided data; never invent vendors, categories, \
+                prices, or numbers. Keep summaries under 150 characters. estimatedImpact states the expected \
+                financial effect in one short sentence.""";
         String userPrompt = "Here is the event snapshot (JSON):\n" + snapshot(event, actions).toPrettyString();
         Optional<String> content = openRouterClient.chatJson(systemPrompt, userPrompt);
-        return content.map(this::parseInsights).orElse(List.of());
+        List<AiDtos.Insight> parsed = content.map(this::parseInsights).orElse(List.of());
+        if (content.isPresent() && parsed.isEmpty()) {
+            String raw = content.get();
+            log.warn("OpenRouter returned JSON with no usable insights (snapshot chars {}, raw chars {}): {}",
+                    userPrompt.length(), raw.length(), raw.length() > 2000 ? raw.substring(0, 2000) : raw);
+        }
+        return parsed;
     }
 
     private ObjectNode snapshot(Event event, List<EventLog> actions) {
@@ -169,7 +276,7 @@ public class AiAdvisorService {
 
         List<Expense> expenses = expenseRepository.findAllByEventId(event.getId()).stream()
                 .sorted(Comparator.comparing(Expense::getExpenseDate).reversed())
-                .limit(20)
+                .limit(15)
                 .toList();
         Map<Long, BigDecimal> vendorSpent = new HashMap<>();
         for (Expense e : expenseRepository.findAllByEventId(event.getId())) {
@@ -223,7 +330,7 @@ public class AiAdvisorService {
 
     private List<AiDtos.Insight> parseInsights(String json) {
         try {
-            JsonNode root = objectMapper.readTree(extractJsonObject(json));
+            JsonNode root = objectMapper.readTree(JsonExtract.findObject(objectMapper, json, "insights"));
             JsonNode insights = root.path("insights");
             if (!insights.isArray()) {
                 return List.of();
@@ -382,18 +489,6 @@ public class AiAdvisorService {
                     "Switch to the cheaper vendor",
                     "Saves up to " + savings.toPlainString()));
         }
-    }
-
-    private String extractJsonObject(String text) {
-        if (text == null) {
-            return "";
-        }
-        int start = text.indexOf('{');
-        int end = text.lastIndexOf('}');
-        if (start >= 0 && end > start) {
-            return text.substring(start, end + 1);
-        }
-        return text;
     }
 
     private String normalizeSeverity(String value) {

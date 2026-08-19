@@ -12,7 +12,9 @@ import com.embos.exception.BadRequestException;
 import com.embos.exception.NotFoundException;
 import com.embos.mapper.ExpenseMapper;
 import com.embos.repository.ExpenseRepository;
+import com.embos.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +32,9 @@ public class ExpenseService {
     private final VendorService vendorService;
     private final ExpenseMapper expenseMapper;
     private final EventLogService eventLogService;
+    private final AuditLogService auditLogService;
     private final ApplicationEventPublisher eventPublisher;
+    private final ObjectProvider<AiAdvisorService> aiAdvisorProvider;
 
     @Transactional(readOnly = true)
     public List<ExpenseDtos.Response> list(Event event) {
@@ -60,7 +64,12 @@ public class ExpenseService {
                 "Added expense '" + saved.getDescription() + "' of " + saved.getAmount().toPlainString()
                         + (saved.getVendor() != null ? " to " + saved.getVendor().getName() : "")
                         + " under '" + saved.getCategory().getName() + "'", actor);
+        var u = SecurityUtils.currentUser();
+        auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
+                "EXPENSE_CREATED", "Expense", saved.getId(), saved.getDescription(),
+                "Created expense of " + saved.getAmount().toPlainString());
         publishBudgetExceeded(event, saved.getCategory());
+        AiAdvisorService.scheduleAfterCommit(aiAdvisorProvider, event);
         return expenseMapper.toResponse(saved);
     }
 
@@ -79,7 +88,12 @@ public class ExpenseService {
         eventLogService.log(event, "EXPENSE_UPDATED",
                 "Updated expense '" + saved.getDescription() + "' to " + saved.getAmount().toPlainString()
                         + " under '" + saved.getCategory().getName() + "'", actor);
+        var u = SecurityUtils.currentUser();
+        auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
+                "EXPENSE_UPDATED", "Expense", saved.getId(), saved.getDescription(),
+                "Updated expense to " + saved.getAmount().toPlainString());
         publishBudgetExceeded(event, saved.getCategory());
+        AiAdvisorService.scheduleAfterCommit(aiAdvisorProvider, event);
         return expenseMapper.toResponse(saved);
     }
 
@@ -106,7 +120,12 @@ public class ExpenseService {
         eventLogService.log(event, "EXPENSE_DELETED",
                 "Deleted expense '" + expense.getDescription() + "' of " + expense.getAmount().toPlainString()
                         + " under '" + expense.getCategory().getName() + "'", actor);
+        var u = SecurityUtils.currentUser();
+        auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
+                "EXPENSE_DELETED", "Expense", expense.getId(), expense.getDescription(),
+                "Deleted expense of " + expense.getAmount().toPlainString());
         expenseRepository.delete(expense);
+        AiAdvisorService.scheduleAfterCommit(aiAdvisorProvider, event);
     }
 
     @Transactional(readOnly = true)

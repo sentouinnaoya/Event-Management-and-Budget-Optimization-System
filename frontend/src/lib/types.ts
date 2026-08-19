@@ -365,3 +365,103 @@ export interface AiInsightsResponse {
   generatedAt?: string;
   generating: boolean;
 }
+
+export interface AuditLogEntry {
+  id: number;
+  userId: number;
+  userName: string;
+  userRole: string;
+  action: string;
+  entityType: string;
+  entityId: number;
+  entityName: string;
+  details: string;
+  ipAddress?: string;
+  createdAt: string;
+}
+
+export interface AuditLogPage {
+  content: AuditLogEntry[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
+export interface AuditLogStats {
+  totalLogs: number;
+  todayLogs: number;
+  topActions: { action: string; count: number }[];
+  topUsers: { userId: number; userName: string; count: number }[];
+}
+
+export interface AnalyticsData {
+  overview: {
+    totalEvents: number;
+    totalUsers: number;
+    todayUsers: number;
+    totalGuests: number;
+    totalVendors: number;
+    totalTasks: number;
+  };
+  eventBreakdown: {
+    draft: number;
+    published: number;
+    ongoing: number;
+    suspended: number;
+    completed: number;
+    failed: number;
+    archived: number;
+  };
+  financial: {
+    totalAllocated: number;
+    totalSpent: number;
+    totalRemaining: number;
+    pendingExpenses: number;
+    totalExpenses: number;
+  };
+  guests: {
+    total: number;
+    registered: number;
+    approved: number;
+    rejected: number;
+    attended: number;
+    absent: number;
+  };
+  tasks: {
+    total: number;
+    todo: number;
+    inProgress: number;
+    done: number;
+    overdue: number;
+  };
+  topUsers: { userId: number; userName: string; actionCount: number }[];
+  recentEvents: { date: string; count: number }[];
+  recentGuests: { date: string; count: number }[];
+}
+
+export interface UserActivitySummary {
+  id: number;
+  fullName: string;
+  email: string;
+  role: string;
+  createdAt: string;
+  eventCount: number;
+  guestCount: number;
+  taskCount: number;
+  expenseTotal: number;
+  auditLogCount: number;
+  unreadNotifications: number;
+}
+
+export interface UserActivityDetail extends UserActivitySummary {
+  eventBreakdown: { status: string; count: number }[];
+  tasksDone: number;
+  totalNotifications: number;
+  recentAuditLogs: {
+    action: string;
+    entityType: string;
+    entityName: string;
+    createdAt: string;
+  }[];
+}

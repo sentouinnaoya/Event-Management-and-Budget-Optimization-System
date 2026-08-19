@@ -9,7 +9,9 @@ import com.embos.exception.ConflictException;
 import com.embos.exception.NotFoundException;
 import com.embos.repository.BudgetCategoryRepository;
 import com.embos.repository.ExpenseRepository;
+import com.embos.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +30,8 @@ public class BudgetService {
     private final BudgetCategoryRepository categoryRepository;
     private final ExpenseRepository expenseRepository;
     private final EventLogService eventLogService;
+    private final AuditLogService auditLogService;
+    private final ObjectProvider<AiAdvisorService> aiAdvisorProvider;
 
     @Transactional(readOnly = true)
     public List<BudgetDtos.CategoryResponse> listCategories(Event event) {
@@ -52,6 +56,11 @@ public class BudgetService {
         eventLogService.log(event, "BUDGET_CATEGORY_CREATED",
                 "Added budget category '" + saved.getName() + "' with " + saved.getAllocatedAmount().toPlainString()
                         + " allocated", actor);
+        var u = SecurityUtils.currentUser();
+        auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
+                "BUDGET_CATEGORY_CREATED", "BudgetCategory", saved.getId(), saved.getName(),
+                "Created budget category with " + saved.getAllocatedAmount().toPlainString() + " allocated");
+        AiAdvisorService.scheduleAfterCommit(aiAdvisorProvider, event);
         return toCategoryResponse(saved);
     }
 
@@ -65,6 +74,11 @@ public class BudgetService {
         eventLogService.log(event, "BUDGET_CATEGORY_UPDATED",
                 "Updated budget category '" + saved.getName() + "' to " + saved.getAllocatedAmount().toPlainString()
                         + " allocated", actor);
+        var u = SecurityUtils.currentUser();
+        auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
+                "BUDGET_CATEGORY_UPDATED", "BudgetCategory", saved.getId(), saved.getName(),
+                "Updated budget category to " + saved.getAllocatedAmount().toPlainString() + " allocated");
+        AiAdvisorService.scheduleAfterCommit(aiAdvisorProvider, event);
         return toCategoryResponse(saved);
     }
 
@@ -76,7 +90,12 @@ public class BudgetService {
         }
         eventLogService.log(event, "BUDGET_CATEGORY_DELETED",
                 "Deleted budget category '" + category.getName() + "'", actor);
+        var u = SecurityUtils.currentUser();
+        auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
+                "BUDGET_CATEGORY_DELETED", "BudgetCategory", category.getId(), category.getName(),
+                "Deleted budget category");
         categoryRepository.delete(category);
+        AiAdvisorService.scheduleAfterCommit(aiAdvisorProvider, event);
     }
 
     @Transactional(readOnly = true)

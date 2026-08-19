@@ -8,7 +8,9 @@ import com.embos.exception.BadRequestException;
 import com.embos.exception.NotFoundException;
 import com.embos.mapper.VendorMapper;
 import com.embos.repository.VendorRepository;
+import com.embos.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,8 @@ public class VendorService {
     private final VendorRepository vendorRepository;
     private final VendorMapper vendorMapper;
     private final EventLogService eventLogService;
+    private final AuditLogService auditLogService;
+    private final ObjectProvider<AiAdvisorService> aiAdvisorProvider;
 
     @Transactional(readOnly = true)
     public List<VendorDtos.Response> list(Event event) {
@@ -49,6 +53,11 @@ public class VendorService {
                         + (saved.getAssignedAmount() != null
                         ? " with assigned budget " + saved.getAssignedAmount().toPlainString()
                         : " with no assigned budget"), actor);
+        var u = SecurityUtils.currentUser();
+        auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
+                "VENDOR_CREATED", "Vendor", saved.getId(), saved.getName(),
+                "Created vendor (" + saved.getServiceType() + ")");
+        AiAdvisorService.scheduleAfterCommit(aiAdvisorProvider, event);
         return vendorMapper.toResponse(saved);
     }
 
@@ -65,6 +74,11 @@ public class VendorService {
         Vendor saved = vendorRepository.save(vendor);
         eventLogService.log(event, "VENDOR_UPDATED",
                 "Updated vendor '" + saved.getName() + "' (" + saved.getServiceType() + ")", actor);
+        var u = SecurityUtils.currentUser();
+        auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
+                "VENDOR_UPDATED", "Vendor", saved.getId(), saved.getName(),
+                "Updated vendor (" + saved.getServiceType() + ")");
+        AiAdvisorService.scheduleAfterCommit(aiAdvisorProvider, event);
         return vendorMapper.toResponse(saved);
     }
 
@@ -73,7 +87,12 @@ public class VendorService {
         Vendor vendor = getVendor(event, vendorId);
         eventLogService.log(event, "VENDOR_DELETED",
                 "Deleted vendor '" + vendor.getName() + "' (" + vendor.getServiceType() + ")", actor);
+        var u = SecurityUtils.currentUser();
+        auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
+                "VENDOR_DELETED", "Vendor", vendor.getId(), vendor.getName(),
+                "Deleted vendor (" + vendor.getServiceType() + ")");
         vendorRepository.delete(vendor);
+        AiAdvisorService.scheduleAfterCommit(aiAdvisorProvider, event);
     }
 
     @Transactional(readOnly = true)

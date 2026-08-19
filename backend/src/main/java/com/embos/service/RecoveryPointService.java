@@ -17,6 +17,7 @@ import com.embos.exception.NotFoundException;
 import com.embos.repository.BudgetCategoryRepository;
 import com.embos.repository.EventRepository;
 import com.embos.repository.RecoveryPointRepository;
+import com.embos.security.SecurityUtils;
 import com.embos.repository.StaffRepository;
 import com.embos.repository.TaskRepository;
 import com.embos.repository.VendorRepository;
@@ -46,6 +47,7 @@ public class RecoveryPointService {
     private final StaffRepository staffRepository;
     private final TaskRepository taskRepository;
     private final EventLogService eventLogService;
+    private final AuditLogService auditLogService;
     private final ObjectMapper objectMapper;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -83,6 +85,10 @@ public class RecoveryPointService {
                 .build();
         RecoveryPoint saved = recoveryPointRepository.save(recoveryPoint);
         eventLogService.log(event, "RECOVERY_POINT_CREATED", "Recovery point created: " + saved.getLabel(), actor);
+        var u = SecurityUtils.currentUser();
+        auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
+                "RECOVERY_POINT_CREATED", "RecoveryPoint", saved.getId(), saved.getLabel(),
+                "Created recovery point: " + saved.getLabel());
         return toResponse(saved);
     }
 
@@ -180,6 +186,10 @@ public class RecoveryPointService {
 
         eventLogService.log(source, "RECOVERY_POINT_RESTORED",
                 "Recovery point restored to new event: " + saved.getName(), actor);
+        var u = SecurityUtils.currentUser();
+        auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
+                "RECOVERY_POINT_RESTORED", "RecoveryPoint", recoveryPoint.getId(), recoveryPoint.getLabel(),
+                "Restored recovery point to new event: " + saved.getName());
         eventPublisher.publishEvent(new RecoveryPointRestoredEvent(
                 source.getId(), source.getOrganizer().getId(), source.getName(), saved.getId()));
         return toEventResponse(saved);

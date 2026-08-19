@@ -51,7 +51,7 @@ export default function EventDetailPage() {
       <AppShell>
         <div className="space-y-6">
           <div>
-            <h1 className="text-xl font-bold text-slate-900">{event.name}</h1>
+            <h1 className="font-display text-xl font-medium text-slate-900">{event.name}</h1>
             <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500">
               <StatusBadge status={event.status} />
               <span>{event.venue}</span>
