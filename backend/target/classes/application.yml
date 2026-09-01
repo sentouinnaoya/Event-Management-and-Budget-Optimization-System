@@ -29,7 +29,3 @@ embos:
   mail:
     resend-api-key: "${RESEND_API_KEY:}"
     from: "${EMBOS_MAIL_FROM:EMBOS <onboarding@resend.dev>}"
-  ai:
-    openrouter-api-key: "${OPENROUTER_API_KEY:}"
-    model: "${EMBOS_AI_MODEL:poolside/laguna-s-2.1:free}"
-    base-url: "https://openrouter.ai/api/v1"

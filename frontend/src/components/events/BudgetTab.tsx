@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,13 +14,13 @@ import {
   YAxis,
 } from "recharts";
 import { categorySchema, type CategoryInputZ } from "../../lib/schemas";
-import type { AiInsight, BudgetCategory } from "../../lib/types";
+import type { AppliedAllocation, BudgetCategory, OptimizationResponse } from "../../lib/types";
 import {
   useAddCategoryMutation,
+  useApplyOptimizationMutation,
   useBudgetSummaryQuery,
   useDeleteCategoryMutation,
-  useGenerateBudgetInsightsMutation,
-  useGetBudgetInsightsQuery,
+  useOptimizeBudgetMutation,
   useUpdateCategoryMutation,
 } from "../../lib/apiSlices";
 import {
@@ -31,12 +31,21 @@ import {
   FieldError,
   Input,
   Label,
-  Skeleton,
+  Modal,
+  Select,
   Spinner,
   StatusBadge,
   apiError,
   formatMoney,
 } from "../ui";
+
+const PRIORITY_LABELS: Record<number, string> = {
+  1: "Low",
+  2: "Moderate",
+  3: "Medium",
+  4: "High",
+  5: "Critical",
+};
 
 export default function BudgetTab({ eventId }: { eventId: number }) {
   const { data, isLoading } = useBudgetSummaryQuery(eventId);
@@ -45,43 +54,16 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
   const [updateCategory, { isLoading: saving }] = useUpdateCategoryMutation();
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<BudgetCategory | null>(null);
-  const { data: insights, isLoading: loadingInsights, refetch } =
-    useGetBudgetInsightsQuery(eventId);
-  const [generateInsights] = useGenerateBudgetInsightsMutation();
-  const [aiError, setAiError] = useState<string | null>(null);
-  const [localGenerating, setLocalGenerating] = useState(false);
-  const generating = localGenerating || (insights?.generating ?? false);
-  const [elapsed, setElapsed] = useState(0);
-  const elapsedStartRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    if (!generating) {
-      elapsedStartRef.current = null;
-      setElapsed(0);
-      return;
-    }
-    elapsedStartRef.current = elapsedStartRef.current ?? Date.now();
-    const id = setInterval(() => {
-      setElapsed(
-        Math.floor((Date.now() - (elapsedStartRef.current ?? Date.now())) / 1000)
-      );
-    }, 1000);
-    return () => clearInterval(id);
-  }, [generating]);
+  const [optimizeBudget, { isLoading: optimizing }] = useOptimizeBudgetMutation();
+  const [applyOptimization, { isLoading: applying }] = useApplyOptimizationMutation();
+  const [budgetInput, setBudgetInput] = useState<string>("");
+  const [proposal, setProposal] = useState<OptimizationResponse | null>(null);
+  const [optimizerError, setOptimizerError] = useState<string | null>(null);
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [appliedMessage, setAppliedMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!generating) return;
-    const id = setInterval(() => {
-      refetch();
-    }, 3000);
-    return () => clearInterval(id);
-  }, [generating, refetch]);
-
-  useEffect(() => {
-    if (localGenerating && insights && !insights.generating) {
-      setLocalGenerating(false);
-    }
-  }, [insights, localGenerating]);
   const {
     register,
     handleSubmit,
@@ -105,6 +87,7 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
         name: input.name,
         allocatedAmount: input.allocatedAmount,
         alertThresholdPct: input.alertThresholdPct,
+        priority: input.priority ?? 3,
       };
       if (editing) {
         await updateCategory({ eventId, id: editing.id, body }).unwrap();
@@ -126,6 +109,7 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
       name: c.name,
       allocatedAmount: c.allocatedAmount,
       alertThresholdPct: c.alertThresholdPct,
+      priority: c.priority ?? 3,
     });
   }
 
@@ -135,14 +119,42 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
     reset();
   }
 
-  async function onGenerate() {
+  async function onOptimize(e?: React.FormEvent) {
+    e?.preventDefault();
     try {
-      setAiError(null);
-      setLocalGenerating(true);
-      await generateInsights(eventId).unwrap();
-    } catch (e) {
-      setLocalGenerating(false);
-      setAiError(apiError(e));
+      setOptimizerError(null);
+      setApplyError(null);
+      setAppliedMessage(null);
+      const trimmed = budgetInput.trim();
+      const totalBudget =
+        trimmed === "" ? undefined : Number(trimmed);
+      if (totalBudget !== undefined && (!Number.isFinite(totalBudget) || totalBudget < 0)) {
+        setOptimizerError("Total budget must be zero or more");
+        return;
+      }
+      const result = await optimizeBudget({ eventId, totalBudget }).unwrap();
+      setProposal(result);
+    } catch (err) {
+      setProposal(null);
+      setOptimizerError(apiError(err));
+    }
+  }
+
+  async function onApply() {
+    if (!proposal) return;
+    try {
+      setApplyError(null);
+      const allocations: AppliedAllocation[] = proposal.categories.map((c) => ({
+        categoryId: c.categoryId,
+        suggestedAllocation: c.suggestedAllocation,
+      }));
+      await applyOptimization({ eventId, allocations }).unwrap();
+      setProposal(null);
+      setConfirmOpen(false);
+      setAppliedMessage("Optimized allocations applied to your budget categories.");
+    } catch (err) {
+      setConfirmOpen(false);
+      setApplyError(apiError(err));
     }
   }
 
@@ -251,6 +263,17 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
               />
               <FieldError message={errors.alertThresholdPct?.message} />
             </div>
+            <div>
+              <Label required>Priority</Label>
+              <Select defaultValue="3" invalid={!!errors.priority} {...register("priority")}>
+                {[5, 4, 3, 2, 1].map((p) => (
+                  <option key={p} value={p}>
+                    {p} — {PRIORITY_LABELS[p]}
+                  </option>
+                ))}
+              </Select>
+              <FieldError message={errors.priority?.message} />
+            </div>
             {error && (
               <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
                 {error}
@@ -311,6 +334,7 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
               <thead>
                 <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
                   <th className="pb-2 pr-4 font-medium">Category</th>
+                  <th className="pb-2 pr-4 font-medium">Priority</th>
                   <th className="pb-2 pr-4 font-medium">Allocated</th>
                   <th className="pb-2 pr-4 font-medium">Spent</th>
                   <th className="pb-2 pr-4 font-medium">Remaining</th>
@@ -327,6 +351,22 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
                   >
                     <td className="py-3 pr-4 font-medium text-slate-800">
                       {c.name}
+                    </td>
+                    <td className="py-3 pr-4">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+                          (c.priority ?? 3) >= 4
+                            ? "bg-red-50 text-red-700"
+                            : (c.priority ?? 3) <= 2
+                            ? "bg-slate-100 text-slate-600"
+                            : "bg-indigo-50 text-indigo-700"
+                        }`}
+                        title={`Priority ${c.priority ?? 3} — ${
+                          PRIORITY_LABELS[c.priority ?? 3]
+                        }`}
+                      >
+                        P{c.priority ?? 3}
+                      </span>
                     </td>
                     <td className="py-3 pr-4 text-slate-600">
                       {formatMoney(c.allocatedAmount)}
@@ -388,176 +428,278 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
         )}
       </Card>
 
-      <Card className="border-indigo-200 bg-indigo-50/40">
-        {generating && (
-          <div className="mb-4 h-1 w-full overflow-hidden rounded-full bg-indigo-100">
-            <div className="h-full w-1/3 rounded-full bg-indigo-600 animate-indeterminate" />
-          </div>
-        )}
+      <OptimizerPanel
+        eventId={eventId}
+        currentTotal={data.totalAllocated}
+        hasCategories={data.categories.length > 0}
+        budgetInput={budgetInput}
+        setBudgetInput={setBudgetInput}
+        proposal={proposal}
+        optimizing={optimizing}
+        applying={applying}
+        optimizerError={optimizerError}
+        applyError={applyError}
+        appliedMessage={appliedMessage}
+        confirmOpen={confirmOpen}
+        setConfirmOpen={setConfirmOpen}
+        onOptimize={onOptimize}
+        onApply={onApply}
+        onDismiss={() => {
+          setProposal(null);
+          setOptimizerError(null);
+        }}
+      />
+    </div>
+  );
+}
 
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <CardHeader
-              title="Recommendation"
-              subtitle="Analyzes the organizer's budget decisions and recommends options"
-            />
-            <p className="text-xs text-slate-500">
-              {insights?.generatedAt
-                ? `Last generated ${new Date(insights.generatedAt).toLocaleString()}`
-                : "No analysis generated yet"}
-            </p>
-          </div>
-          <Button onClick={onGenerate} loading={generating}>
-            {generating ? "Generating…" : "Generate"}
+function OptimizerPanel(props: {
+  eventId: number;
+  currentTotal: number;
+  hasCategories: boolean;
+  budgetInput: string;
+  setBudgetInput: (v: string) => void;
+  proposal: OptimizationResponse | null;
+  optimizing: boolean;
+  applying: boolean;
+  optimizerError: string | null;
+  applyError: string | null;
+  appliedMessage: string | null;
+  confirmOpen: boolean;
+  setConfirmOpen: (v: boolean) => void;
+  onOptimize: (e?: React.FormEvent) => void;
+  onApply: () => void;
+  onDismiss: () => void;
+}) {
+  const {
+    currentTotal,
+    hasCategories,
+    budgetInput,
+    setBudgetInput,
+    proposal,
+    optimizing,
+    applying,
+    optimizerError,
+    applyError,
+    appliedMessage,
+    confirmOpen,
+    setConfirmOpen,
+    onOptimize,
+    onApply,
+    onDismiss,
+  } = props;
+
+  const statusStyles = proposal
+    ? proposal.status === "SURPLUS"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+      : proposal.status === "BALANCED"
+      ? "border-indigo-200 bg-indigo-50 text-indigo-800"
+      : "border-amber-200 bg-amber-50 text-amber-800"
+    : "";
+
+  const changedCount = proposal
+    ? proposal.categories.filter(
+        (c) =>
+          Math.abs(
+            Number(c.deltaAmount)
+          ) > 0.004
+      ).length
+    : 0;
+
+  return (
+    <Card className="border-indigo-200 bg-indigo-50/40">
+      <CardHeader
+        title="Budget optimizer"
+        subtitle="Redistributes your budget across categories by priority, protecting money already spent"
+      />
+
+      <form onSubmit={onOptimize} className="flex flex-wrap items-end gap-3">
+        <div className="min-w-[220px] flex-1">
+          <Label>Total budget</Label>
+          <Input
+            type="number"
+            step="0.01"
+            min={0}
+            placeholder={String(currentTotal)}
+            value={budgetInput}
+            onChange={(e) => setBudgetInput(e.target.value)}
+          />
+          <p className="mt-1 text-xs text-slate-500">
+            Leave empty to use the currently allocated{" "}
+            {formatMoney(currentTotal)}.
+          </p>
+        </div>
+        <Button type="submit" loading={optimizing} disabled={!hasCategories}>
+          {optimizing ? "Optimizing…" : proposal ? "Re-run optimizer" : "Run optimizer"}
+        </Button>
+        {proposal && (
+          <Button type="button" variant="secondary" onClick={onDismiss}>
+            Dismiss
           </Button>
-        </div>
-
-        {generating && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-medium text-indigo-600">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-indigo-600" />
-            </span>
-            {insights && insights.insights.length > 0
-              ? "Updating your recommendations…"
-              : "Analyzing your budget decisions…"}
-            <span className="text-slate-400">· {elapsed}s</span>
-          </div>
         )}
+      </form>
 
-        {aiError && (
-          <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-            {aiError}
-          </div>
-        )}
-
-        {loadingInsights ? (
-          <div className="flex justify-center py-10">
-            <Spinner />
-          </div>
-        ) : insights && insights.insights.length > 0 ? (
-          <>
-            {generating && (
-              <p className="mt-3 text-xs text-slate-500">
-                The first analysis takes about 30 seconds — after that,
-                recommendations refresh automatically as your budget changes.
-              </p>
-            )}
-            <div className="mt-4 space-y-4">
-              {insights.insights.map((insight, i) => (
-                <InsightCard key={i} insight={insight} />
-              ))}
-            </div>
-          </>
-        ) : generating ? (
-          <div className="mt-4 space-y-4">
-            <InsightSkeleton />
-            <InsightSkeleton />
-            <p className="text-xs text-slate-500">
-              The first analysis usually takes about 30 seconds — you can keep
-              working while it runs.
-            </p>
-          </div>
-        ) : (
-          <div className="mt-4">
-            <EmptyState
-              title="No analysis yet"
-              description={
-                insights &&
-                insights.actionCount === 0 &&
-                data.categories.length === 0
-                  ? "The AI analyzes your budget decisions once you've made some — add budget categories, vendors, or expenses, then click Generate with AI."
-                  : "Click Generate with AI to get budget optimization recommendations."
-              }
-            />
-          </div>
-        )}
-      </Card>
-    </div>
-  );
-}
-
-function InsightSkeleton() {
-  return (
-    <div className="rounded-lg border border-indigo-200 bg-white p-4">
-      <div className="flex items-center justify-between gap-2">
-        <Skeleton className="h-4 w-44" />
-        <Skeleton className="h-5 w-16 rounded-full" />
-      </div>
-      <Skeleton className="mt-3 h-3 w-full" />
-      <Skeleton className="mt-2 h-3 w-3/4" />
-      <div className="mt-4 space-y-2">
-        <div className="flex gap-2">
-          <Skeleton className="h-5 w-5 shrink-0 rounded-full" />
-          <Skeleton className="h-3 w-1/2" />
-        </div>
-        <div className="flex gap-2">
-          <Skeleton className="h-5 w-5 shrink-0 rounded-full" />
-          <Skeleton className="h-3 w-2/5" />
-        </div>
-      </div>
-      <Skeleton className="mt-4 h-3 w-1/3" />
-    </div>
-  );
-}
-
-function InsightCard({ insight }: { insight: AiInsight }) {
-  const tone =
-    insight.severity === "CRITICAL"
-      ? "border-red-200 bg-red-50"
-      : insight.severity === "WARNING"
-      ? "border-amber-200 bg-amber-50"
-      : "border-emerald-200 bg-emerald-50";
-  const badge =
-    insight.severity === "CRITICAL"
-      ? "bg-red-100 text-red-700"
-      : insight.severity === "WARNING"
-      ? "bg-amber-100 text-amber-700"
-      : "bg-emerald-100 text-emerald-700";
-
-  return (
-    <div className={`rounded-lg border p-4 ${tone}`}>
-      <div className="flex items-start justify-between gap-2">
-        <p className="font-semibold text-slate-900">{insight.topic}</p>
-        <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${badge}`}
-        >
-          {insight.severity}
-        </span>
-      </div>
-      <p className="mt-1 text-sm text-slate-700">{insight.summary}</p>
-      {insight.options.length > 0 && (
-        <ul className="mt-3 space-y-2">
-          {insight.options.map((o, i) => (
-            <li key={i} className="flex gap-2 text-sm">
-              <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700">
-                {String.fromCharCode(65 + i)}
-              </span>
-              <div>
-                <p className="font-medium text-slate-800">
-                  {o.label}
-                  {o.label === insight.recommendedOption && (
-                    <span className="ml-1.5 text-xs font-semibold text-indigo-600">
-                      ✓ Recommended
-                    </span>
-                  )}
-                </p>
-                {o.description && (
-                  <p className="text-slate-600">{o.description}</p>
-                )}
-                {o.estimatedImpact && (
-                  <p className="text-emerald-700">{o.estimatedImpact}</p>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-      {insight.impactEstimate && (
-        <p className="mt-3 border-t border-slate-200 pt-2 text-sm font-medium text-slate-700">
-          Expected impact: {insight.impactEstimate}
+      {!hasCategories && (
+        <p className="mt-3 text-xs text-slate-500">
+          Add at least one budget category to run the optimizer.
         </p>
       )}
-    </div>
+
+      {appliedMessage && (
+        <div className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+          {appliedMessage}
+        </div>
+      )}
+
+      {applyError && (
+        <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          {applyError}
+        </div>
+      )}
+
+      {optimizerError && (
+        <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          {optimizerError}
+        </div>
+      )}
+
+      {proposal && (
+        <div className="mt-4 space-y-4">
+          <div className={`rounded-lg border px-4 py-3 ${statusStyles}`}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-semibold">{proposal.status}</p>
+              <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs font-medium">
+                <span>Budget: {formatMoney(proposal.totalBudget)}</span>
+                <span>Required: {formatMoney(proposal.totalRequired)}</span>
+                <span>Suggested: {formatMoney(proposal.totalSuggested)}</span>
+              </div>
+            </div>
+            {proposal.notes.length > 0 && (
+              <ul className="mt-2 space-y-1 text-xs opacity-90">
+                {proposal.notes.map((n, i) => (
+                  <li key={i}>• {n}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="overflow-x-auto rounded-lg border border-indigo-100 bg-white">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500">
+                  <th className="px-3 pb-2 pt-3 font-medium">Category</th>
+                  <th className="px-3 pb-2 pt-3 font-medium">Current</th>
+                  <th className="px-3 pb-2 pt-3 font-medium">Spent</th>
+                  <th className="px-3 pb-2 pt-3 font-medium">Required</th>
+                  <th className="px-3 pb-2 pt-3 font-medium">Suggested</th>
+                  <th className="px-3 pb-2 pt-3 font-medium">Change</th>
+                  <th className="px-3 pb-2 pt-3 font-medium">Coverage</th>
+                  <th className="px-3 pb-2 pt-3 font-medium">Why</th>
+                </tr>
+              </thead>
+              <tbody>
+                {proposal.categories.map((c) => (
+                  <tr key={c.categoryId} className="border-b border-slate-100 last:border-0">
+                    <td className="px-3 py-3 font-medium text-slate-800">
+                      {c.name}
+                      <span className="ml-2 text-xs font-normal text-slate-400">
+                        P{c.priority}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 text-slate-600">
+                      {formatMoney(c.currentAllocation)}
+                    </td>
+                    <td className="px-3 py-3 text-slate-600">
+                      {formatMoney(c.spentAmount)}
+                    </td>
+                    <td className="px-3 py-3 text-slate-600">
+                      {formatMoney(c.requiredAmount)}
+                    </td>
+                    <td className="px-3 py-3 font-semibold text-slate-900">
+                      {formatMoney(c.suggestedAllocation)}
+                    </td>
+                    <td
+                      className={`px-3 py-3 font-medium ${
+                        c.deltaAmount > 0
+                          ? "text-emerald-600"
+                          : c.deltaAmount < 0
+                          ? "text-red-600"
+                          : "text-slate-400"
+                      }`}
+                    >
+                      {c.deltaAmount > 0
+                        ? `+${formatMoney(c.deltaAmount)}`
+                        : c.deltaAmount < 0
+                        ? `−${formatMoney(Math.abs(c.deltaAmount))}`
+                        : "—"}
+                    </td>
+                    <td className="px-3 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-16 overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            className={`h-full rounded-full ${
+                              c.coveragePct >= 100
+                                ? "bg-emerald-500"
+                                : c.coveragePct >= 70
+                                ? "bg-amber-500"
+                                : "bg-red-500"
+                            }`}
+                            style={{
+                              width: `${Math.min(100, Math.max(0, c.coveragePct))}%`,
+                            }}
+                          />
+                        </div>
+                        <span className="text-xs text-slate-500">
+                          {c.coveragePct}%
+                        </span>
+                      </div>
+                    </td>
+                    <td className="max-w-[240px] px-3 py-3 text-xs text-slate-500">
+                      {c.rationale}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs text-slate-500">
+              Nothing is saved until you apply. {changedCount} of{" "}
+              {proposal.categories.length} categories would change.
+            </p>
+            <Button onClick={() => setConfirmOpen(true)} loading={applying}>
+              Apply to categories
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <Modal
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        title="Apply optimized allocations"
+      >
+        <div className="space-y-3">
+          <p className="text-sm text-slate-500">
+            This overwrites the allocation of every listed category with the
+            optimizer&apos;s suggestion ({changedCount} categories change).
+            Spending records are not modified.
+          </p>
+          <div className="flex justify-end gap-2 pt-1">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setConfirmOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="button" onClick={onApply} loading={applying}>
+              Apply changes
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </Card>
   );
 }

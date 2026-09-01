@@ -14,7 +14,6 @@ import com.embos.mapper.ExpenseMapper;
 import com.embos.repository.ExpenseRepository;
 import com.embos.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +33,6 @@ public class ExpenseService {
     private final EventLogService eventLogService;
     private final AuditLogService auditLogService;
     private final ApplicationEventPublisher eventPublisher;
-    private final ObjectProvider<AiAdvisorService> aiAdvisorProvider;
 
     @Transactional(readOnly = true)
     public List<ExpenseDtos.Response> list(Event event) {
@@ -69,7 +67,6 @@ public class ExpenseService {
                 "EXPENSE_CREATED", "Expense", saved.getId(), saved.getDescription(),
                 "Created expense of " + saved.getAmount().toPlainString());
         publishBudgetExceeded(event, saved.getCategory());
-        AiAdvisorService.scheduleAfterCommit(aiAdvisorProvider, event);
         return expenseMapper.toResponse(saved);
     }
 
@@ -93,7 +90,6 @@ public class ExpenseService {
                 "EXPENSE_UPDATED", "Expense", saved.getId(), saved.getDescription(),
                 "Updated expense to " + saved.getAmount().toPlainString());
         publishBudgetExceeded(event, saved.getCategory());
-        AiAdvisorService.scheduleAfterCommit(aiAdvisorProvider, event);
         return expenseMapper.toResponse(saved);
     }
 
@@ -125,7 +121,6 @@ public class ExpenseService {
                 "EXPENSE_DELETED", "Expense", expense.getId(), expense.getDescription(),
                 "Deleted expense of " + expense.getAmount().toPlainString());
         expenseRepository.delete(expense);
-        AiAdvisorService.scheduleAfterCommit(aiAdvisorProvider, event);
     }
 
     @Transactional(readOnly = true)

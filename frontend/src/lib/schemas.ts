@@ -30,6 +30,16 @@ export const categorySchema = z.object({
     .number()
     .min(0)
     .max(100, "Threshold must be between 0 and 100"),
+  priority: z.coerce
+    .number()
+    .min(1, "Priority must be between 1 and 5")
+    .max(5, "Priority must be between 1 and 5"),
+});
+
+export const optimizeSchema = z.object({
+  totalBudget: z.coerce
+    .number()
+    .min(0, "Total budget must be zero or more"),
 });
 
 export const expenseSchema = z.object({

@@ -11,7 +11,6 @@ com\embos\controller\PublicEventsController.class
 com\embos\event\RecoveryPointRestoredEvent.class
 com\embos\entity\enums\GuestType.class
 com\embos\dto\EventBackupDtos$Response.class
-com\embos\service\AiAdvisorService.class
 com\embos\security\JwtService.class
 com\embos\service\ExpenseService.class
 com\embos\dto\ExpenseDtos.class
@@ -20,8 +19,8 @@ com\embos\service\RecoveryPointService$TaskData.class
 com\embos\dto\BudgetDtos$CategoryResponse.class
 com\embos\dto\UserActivityDtos$UserSummary.class
 com\embos\service\BudgetService.class
-com\embos\ai\JsonExtract.class
 com\embos\service\GuestEmailService.class
+com\embos\dto\BudgetDtos$OptimizeRequest.class
 com\embos\entity\enums\GuestStatus.class
 com\embos\service\AnalyticsService.class
 com\embos\config\SecurityConfig.class
@@ -31,7 +30,6 @@ com\embos\dto\RecoveryPointDtos$Response.class
 com\embos\entity\enums\Priority.class
 com\embos\dto\AuthDtos$AuthResponse.class
 com\embos\repository\EventBackupRepository.class
-com\embos\dto\AiDtos$Insight.class
 com\embos\mapper\EventMapper.class
 com\embos\dto\AnalyticsDtos$TaskHealth.class
 com\embos\service\EventLogService.class
@@ -48,10 +46,8 @@ com\embos\dto\UserActivityDtos$RecentAuditEntry.class
 com\embos\exception\BadRequestException.class
 com\embos\dto\NotificationDtos.class
 com\embos\mapper\TaskMapper.class
-com\embos\dto\AiDtos.class
 com\embos\dto\AuthDtos$UserResponse.class
 com\embos\entity\Notification.class
-com\embos\repository\EventAiInsightRepository.class
 com\embos\service\DashboardService.class
 com\embos\entity\Guest$GuestBuilder.class
 com\embos\dto\EventBackupDtos$Request.class
@@ -66,7 +62,6 @@ com\embos\controller\VendorController.class
 com\embos\entity\Event$EventBuilder.class
 com\embos\dto\EventDtos$Request.class
 com\embos\dto\ExpenseDtos$Response.class
-com\embos\entity\EventAiInsight$EventAiInsightBuilder.class
 com\embos\controller\RecoveryPointController.class
 com\embos\dto\GuestDtos$PublicEventResponse.class
 com\embos\controller\EventController.class
@@ -80,6 +75,7 @@ com\embos\entity\EventBackup.class
 com\embos\mapper\TaskMapperImpl.class
 com\embos\dto\VendorDtos.class
 com\embos\event\BudgetExceededEvent.class
+com\embos\dto\BudgetDtos$OptimizationResponse.class
 com\embos\dto\DashboardDtos$Response.class
 com\embos\dto\GuestDtos$Request.class
 com\embos\exception\UnauthorizedException.class
@@ -97,7 +93,7 @@ com\embos\exception\GlobalExceptionHandler.class
 com\embos\dto\UserActivityDtos.class
 com\embos\dto\ExpenseDtos$Request.class
 com\embos\dto\RecoveryPointDtos$CreateRequest.class
-com\embos\dto\AiDtos$InsightsResponse.class
+com\embos\service\BudgetOptimizerService.class
 com\embos\service\RecoveryPointService$VendorData.class
 com\embos\exception\NotFoundException.class
 com\embos\mapper\VendorMapperImpl.class
@@ -113,11 +109,8 @@ com\embos\service\UserActivityService.class
 com\embos\dto\UserActivityDtos$EventStatusCount.class
 com\embos\dto\NotificationDtos$UnreadCount.class
 com\embos\mapper\GuestMapper.class
-com\embos\dto\AiDtos$InsightOption.class
-com\embos\service\AiAdvisorService$1.class
 com\embos\entity\Vendor.class
 com\embos\dto\AnalyticsDtos$GuestAnalytics.class
-com\embos\entity\EventAiInsight.class
 com\embos\entity\Expense.class
 com\embos\service\DashboardService$1.class
 com\embos\dto\AuditLogDtos$Response.class
@@ -133,7 +126,6 @@ com\embos\repository\GuestRepository.class
 com\embos\repository\VendorRepository.class
 com\embos\dto\TaskDtos$Response.class
 com\embos\EmbosApplication.class
-com\embos\service\AiAdvisorService$2.class
 com\embos\dto\EventDtos$StatusRequest.class
 com\embos\controller\BudgetController.class
 com\embos\controller\ExpenseController.class
@@ -143,6 +135,7 @@ com\embos\service\StaffService.class
 com\embos\controller\BudgetCategoryController.class
 com\embos\dto\TaskDtos$StatusRequest.class
 com\embos\service\NotificationService.class
+com\embos\dto\BudgetDtos$AppliedAllocation.class
 com\embos\controller\DashboardController.class
 com\embos\dto\EventLogDtos$Response.class
 com\embos\dto\ReportDtos$DailyDay.class
@@ -161,6 +154,7 @@ com\embos\controller\NotificationController.class
 com\embos\dto\StaffDtos$Response.class
 com\embos\entity\Expense$ExpenseBuilder.class
 com\embos\service\RecoveryPointService.class
+com\embos\service\BudgetOptimizerService$CategoryInput.class
 com\embos\repository\ExpenseRepository.class
 com\embos\service\AuditLogService.class
 com\embos\dto\EventLogDtos.class
@@ -174,11 +168,11 @@ com\embos\dto\DashboardDtos.class
 com\embos\mapper\UserMapper.class
 com\embos\mapper\UserMapperImpl.class
 com\embos\dto\BudgetDtos$CategoryRequest.class
-com\embos\ai\OpenRouterClient.class
 com\embos\entity\Vendor$VendorBuilder.class
 com\embos\security\SecurityUtils.class
 com\embos\controller\EventLogController.class
 com\embos\dto\AnalyticsDtos$Response.class
+com\embos\dto\BudgetDtos$ApplyOptimizationRequest.class
 com\embos\mapper\StaffMapper.class
 com\embos\repository\NotificationRepository.class
 com\embos\entity\EventLog.class
@@ -199,6 +193,7 @@ com\embos\service\RecoveryPointService$StaffData.class
 com\embos\dto\ReportDtos$DailyOverview.class
 com\embos\service\RecoveryPointService$CategoryData.class
 com\embos\dto\AuditLogDtos$PageResponse.class
+com\embos\dto\BudgetDtos$OptimizationCategory.class
 com\embos\dto\AuthDtos$LoginRequest.class
 com\embos\dto\AnalyticsDtos$FinancialOverview.class
 com\embos\event\EventStatusChangedEvent.class

@@ -2,9 +2,13 @@
 # Starts MySQL (if not running), backend, frontend, and a free cloudflared tunnel.
 # Prereqs: XAMPP MySQL, Java 17+, Node.js, cloudflared (https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/)
 #
-# Usage:  powershell -ExecutionPolicy Bypass -File scripts/demo.ps1
+# Usage:  powershell -ExecutionPolicy Bypass -File scripts\demo.ps1
 
 $ErrorActionPreference = "Stop"
+$ProjectRoot = Split-Path -Parent $PSScriptRoot
+$BackendJar  = Join-Path $ProjectRoot "backend\target\embos-backend-0.0.1-SNAPSHOT.jar"
+$FrontendDir = Join-Path $ProjectRoot "frontend"
+$MavenPath   = Join-Path $env:LOCALAPPDATA "Programs\apache-maven\apache-maven-3.9.16\bin\mvn.cmd"
 
 # Optional email settings. Set RESEND_API_KEY to enable the approve/reject
 # emails (Resend, https://resend.com). EMBOS_MAIL_FROM must be a verified
@@ -22,10 +26,11 @@ Write-Host "== EMBOS demo launcher =="
 # 1. MySQL
 if (-not (Test-Port 3306)) {
   Write-Host "Starting MySQL..."
-  if (-not (Test-Path "C:\xampp\mysql\bin\mysqld.exe")) {
+  $mysqld = "C:\xampp\mysql\bin\mysqld.exe"
+  if (-not (Test-Path $mysqld)) {
     Write-Warning "mysqld.exe not found at C:\xampp\mysql\bin. Start MySQL manually."
   } else {
-    Start-Process "C:\xampp\mysql\bin\mysqld.exe" `
+    Start-Process $mysqld `
       -ArgumentList "--defaults-file=C:\xampp\mysql\bin\my.ini" `
       -WindowStyle Hidden
     Start-Sleep -Seconds 8
@@ -34,13 +39,13 @@ if (-not (Test-Port 3306)) {
 
 # 2. Backend (jar must exist: run `mvn -q clean -DskipTests package` in backend/ first)
 if (-not (Test-Port 8080)) {
-  $jar = "C:\Users\PC\Documents\event\backend\target\embos-backend-0.0.1-SNAPSHOT.jar"
-  if (Test-Path $jar) {
+  if (Test-Path $BackendJar) {
     Write-Host "Starting backend..."
-    Start-Process java -ArgumentList "-jar", $jar `
-      -WorkingDirectory "C:\Users\PC\Documents\event\backend" `
-      -RedirectStandardOutput "C:\Users\PC\Documents\event\backend\backend-run.out.log" `
-      -RedirectStandardError "C:\Users\PC\Documents\event\backend\backend-run.err.log" `
+    $backendLogFile = Join-Path $ProjectRoot "logs\backend-run.log"
+    Start-Process java -ArgumentList "-jar", "`"$BackendJar`"" `
+      -WorkingDirectory (Join-Path $ProjectRoot "backend") `
+      -RedirectStandardOutput $backendLogFile `
+      -RedirectStandardError "$backendLogFile.err" `
       -WindowStyle Hidden
     Start-Sleep -Seconds 35
   } else {
@@ -51,10 +56,16 @@ if (-not (Test-Port 8080)) {
 # 3. Frontend dev server
 if (-not (Test-Port 3000)) {
   Write-Host "Starting frontend dev server..."
-  Start-Process "C:\Program Files\nodejs\npm.cmd" -ArgumentList "run", "dev" `
-    -WorkingDirectory "C:\Users\PC\Documents\event\frontend" `
-    -WindowStyle Hidden
-  Start-Sleep -Seconds 20
+  $nodeExe = "C:\Program Files\nodejs\node.exe"
+  $nextBin = Join-Path $FrontendDir "node_modules\.bin\next"
+  if (-not (Test-Path $nextBin)) {
+    Write-Warning "Next.js binary not found. Run: cd frontend; npm install"
+  } else {
+    Start-Process $nodeExe -ArgumentList "`"$nextBin`"", "dev", "--turbopack" `
+      -WorkingDirectory $FrontendDir `
+      -WindowStyle Hidden
+    Start-Sleep -Seconds 20
+  }
 }
 
 Write-Host ""

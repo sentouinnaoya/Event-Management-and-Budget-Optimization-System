@@ -76,6 +76,7 @@ export interface BudgetCategory {
   name: string;
   allocatedAmount: number;
   alertThresholdPct: number;
+  priority: number;
   spentAmount: number;
   remainingAmount: number;
   utilizationPct: number;
@@ -94,6 +95,7 @@ export interface CategoryInput {
   name: string;
   allocatedAmount: number;
   alertThresholdPct: number;
+  priority: number;
 }
 
 export type PaymentStatus = "PAID" | "PENDING";
@@ -344,26 +346,34 @@ export interface RecoveryPoint {
   createdAt: string;
 }
 
-export interface AiInsightOption {
-  label: string;
-  description: string;
-  estimatedImpact?: string;
+export type OptimizationStatus = "SURPLUS" | "BALANCED" | "DEFICIT";
+
+export interface OptimizationCategory {
+  categoryId: number;
+  name: string;
+  priority: number;
+  currentAllocation: number;
+  spentAmount: number;
+  requiredAmount: number;
+  suggestedAllocation: number;
+  deltaAmount: number;
+  coveragePct: number;
+  rationale: string;
 }
 
-export interface AiInsight {
-  topic: string;
-  severity: "INFO" | "WARNING" | "CRITICAL";
-  summary: string;
-  options: AiInsightOption[];
-  recommendedOption?: string;
-  impactEstimate?: string;
+export interface OptimizationResponse {
+  status: OptimizationStatus;
+  totalBudget: number;
+  totalCurrentAllocation: number;
+  totalRequired: number;
+  totalSuggested: number;
+  categories: OptimizationCategory[];
+  notes: string[];
 }
 
-export interface AiInsightsResponse {
-  insights: AiInsight[];
-  actionCount: number;
-  generatedAt?: string;
-  generating: boolean;
+export interface AppliedAllocation {
+  categoryId: number;
+  suggestedAllocation: number;
 }
 
 export interface AuditLogEntry {

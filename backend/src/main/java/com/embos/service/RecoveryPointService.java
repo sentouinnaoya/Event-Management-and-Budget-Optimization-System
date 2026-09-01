@@ -62,7 +62,7 @@ public class RecoveryPointService {
                 event.getCapacity(),
                 event.getRegistrationDeadline(),
                 budgetCategoryRepository.findAllByEventIdOrderByCreatedAtAsc(event.getId()).stream()
-                        .map(c -> new CategoryData(c.getName(), c.getAllocatedAmount(), c.getAlertThresholdPct()))
+                        .map(c -> new CategoryData(c.getName(), c.getAllocatedAmount(), c.getAlertThresholdPct(), c.getPriority()))
                         .toList(),
                 vendorRepository.findAllByEventIdOrderByCreatedAtAsc(event.getId()).stream()
                         .map(v -> new VendorData(v.getName(), v.getServiceType(), v.getContactPerson(),
@@ -126,6 +126,7 @@ public class RecoveryPointService {
                     .name(c.name())
                     .allocatedAmount(c.allocatedAmount())
                     .alertThresholdPct(c.alertThresholdPct())
+                    .priority(BudgetService.normalizePriority(c.priority()))
                     .createdAt(LocalDateTime.now())
                     .build());
         }
@@ -263,7 +264,7 @@ public class RecoveryPointService {
             List<TaskData> tasks) {
     }
 
-    record CategoryData(String name, BigDecimal allocatedAmount, BigDecimal alertThresholdPct) {
+    record CategoryData(String name, BigDecimal allocatedAmount, BigDecimal alertThresholdPct, Integer priority) {
     }
 
     record VendorData(String name, String serviceType, String contactPerson, String email, String phone,

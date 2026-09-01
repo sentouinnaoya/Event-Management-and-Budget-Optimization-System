@@ -16,7 +16,6 @@ import com.embos.repository.EventRepository;
 import com.embos.repository.GuestRepository;
 import com.embos.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,7 +39,6 @@ public class GuestService {
     private final EventLogService eventLogService;
     private final AuditLogService auditLogService;
     private final ApplicationEventPublisher eventPublisher;
-    private final ObjectProvider<AiAdvisorService> aiAdvisorProvider;
 
     @Transactional(readOnly = true)
     public List<GuestDtos.Response> list(Event event) {
@@ -77,7 +75,6 @@ public class GuestService {
                 event.getName(), event.getRegistrationToken(),
                 saved.getRegistrationCode(), GuestStatus.APPROVED.name(),
                 event.getDate(), event.getVenue()));
-        AiAdvisorService.scheduleAfterCommit(aiAdvisorProvider, event);
         return guestMapper.toResponse(saved);
     }
 
@@ -107,7 +104,6 @@ public class GuestService {
                     event.getName(), event.getRegistrationToken(),
                     guest.getRegistrationCode(), newStatus.name(),
                     event.getDate(), event.getVenue()));
-            AiAdvisorService.scheduleAfterCommit(aiAdvisorProvider, event);
         }
         return response;
     }

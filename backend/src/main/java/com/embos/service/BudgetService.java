@@ -11,7 +11,6 @@ import com.embos.repository.BudgetCategoryRepository;
 import com.embos.repository.ExpenseRepository;
 import com.embos.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +30,6 @@ public class BudgetService {
     private final ExpenseRepository expenseRepository;
     private final EventLogService eventLogService;
     private final AuditLogService auditLogService;
-    private final ObjectProvider<AiAdvisorService> aiAdvisorProvider;
 
     @Transactional(readOnly = true)
     public List<BudgetDtos.CategoryResponse> listCategories(Event event) {
@@ -50,6 +48,7 @@ public class BudgetService {
                 .name(request.name().trim())
                 .allocatedAmount(request.allocatedAmount())
                 .alertThresholdPct(request.alertThresholdPct())
+                .priority(normalizePriority(request.priority()))
                 .createdAt(LocalDateTime.now())
                 .build();
         BudgetCategory saved = categoryRepository.save(category);
@@ -60,7 +59,6 @@ public class BudgetService {
         auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
                 "BUDGET_CATEGORY_CREATED", "BudgetCategory", saved.getId(), saved.getName(),
                 "Created budget category with " + saved.getAllocatedAmount().toPlainString() + " allocated");
-        AiAdvisorService.scheduleAfterCommit(aiAdvisorProvider, event);
         return toCategoryResponse(saved);
     }
 
@@ -70,6 +68,7 @@ public class BudgetService {
         category.setName(request.name().trim());
         category.setAllocatedAmount(request.allocatedAmount());
         category.setAlertThresholdPct(request.alertThresholdPct());
+        category.setPriority(normalizePriority(request.priority()));
         BudgetCategory saved = categoryRepository.save(category);
         eventLogService.log(event, "BUDGET_CATEGORY_UPDATED",
                 "Updated budget category '" + saved.getName() + "' to " + saved.getAllocatedAmount().toPlainString()
@@ -78,7 +77,6 @@ public class BudgetService {
         auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
                 "BUDGET_CATEGORY_UPDATED", "BudgetCategory", saved.getId(), saved.getName(),
                 "Updated budget category to " + saved.getAllocatedAmount().toPlainString() + " allocated");
-        AiAdvisorService.scheduleAfterCommit(aiAdvisorProvider, event);
         return toCategoryResponse(saved);
     }
 
@@ -95,7 +93,6 @@ public class BudgetService {
                 "BUDGET_CATEGORY_DELETED", "BudgetCategory", category.getId(), category.getName(),
                 "Deleted budget category");
         categoryRepository.delete(category);
-        AiAdvisorService.scheduleAfterCommit(aiAdvisorProvider, event);
     }
 
     @Transactional(readOnly = true)
@@ -106,6 +103,14 @@ public class BudgetService {
             throw new NotFoundException("Budget category not found");
         }
         return category;
+    }
+
+    @Transactional
+    public void logOptimization(Event event, String detail, String actor) {
+        eventLogService.log(event, "BUDGET_OPTIMIZED", detail, actor);
+        var u = SecurityUtils.currentUser();
+        auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
+                "BUDGET_OPTIMIZED", "Event", event.getId(), event.getName(), detail);
     }
 
     @Transactional(readOnly = true)
@@ -160,6 +165,11 @@ public class BudgetService {
                 : "OK";
         return new BudgetDtos.CategoryResponse(
                 category.getId(), category.getName(), allocated, category.getAlertThresholdPct(),
+                normalizePriority(category.getPriority()),
                 spent, remaining, utilization, alertLevel);
+    }
+
+    static int normalizePriority(Integer priority) {
+        return priority == null || priority < 1 || priority > 5 ? 3 : priority;
     }
 }

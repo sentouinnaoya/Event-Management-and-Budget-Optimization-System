@@ -309,7 +309,7 @@ export default function BackupTab({ eventId }: { eventId: number }) {
       >
         <div className="space-y-3">
           <p className="text-sm text-slate-500">
-            Restoring "{confirmRestore?.label}" creates a <b>new draft event</b> with the saved
+            Restoring &quot;{confirmRestore?.label}&quot; creates a <b>new draft event</b> with the saved
             budget, vendors, staff, and open tasks. Guests and expenses are not copied.
           </p>
           <div className="flex justify-end gap-2 pt-1">

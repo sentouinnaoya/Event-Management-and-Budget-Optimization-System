@@ -44,6 +44,9 @@ public class BudgetCategory {
     @Column(nullable = false, precision = 5, scale = 2)
     private BigDecimal alertThresholdPct;
 
+    @Column(nullable = false)
+    private Integer priority;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 }

@@ -10,7 +10,6 @@ import com.embos.mapper.VendorMapper;
 import com.embos.repository.VendorRepository;
 import com.embos.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +24,6 @@ public class VendorService {
     private final VendorMapper vendorMapper;
     private final EventLogService eventLogService;
     private final AuditLogService auditLogService;
-    private final ObjectProvider<AiAdvisorService> aiAdvisorProvider;
 
     @Transactional(readOnly = true)
     public List<VendorDtos.Response> list(Event event) {
@@ -57,7 +55,6 @@ public class VendorService {
         auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
                 "VENDOR_CREATED", "Vendor", saved.getId(), saved.getName(),
                 "Created vendor (" + saved.getServiceType() + ")");
-        AiAdvisorService.scheduleAfterCommit(aiAdvisorProvider, event);
         return vendorMapper.toResponse(saved);
     }
 
@@ -78,7 +75,6 @@ public class VendorService {
         auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
                 "VENDOR_UPDATED", "Vendor", saved.getId(), saved.getName(),
                 "Updated vendor (" + saved.getServiceType() + ")");
-        AiAdvisorService.scheduleAfterCommit(aiAdvisorProvider, event);
         return vendorMapper.toResponse(saved);
     }
 
@@ -92,7 +88,6 @@ public class VendorService {
                 "VENDOR_DELETED", "Vendor", vendor.getId(), vendor.getName(),
                 "Deleted vendor (" + vendor.getServiceType() + ")");
         vendorRepository.delete(vendor);
-        AiAdvisorService.scheduleAfterCommit(aiAdvisorProvider, event);
     }
 
     @Transactional(readOnly = true)

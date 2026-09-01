@@ -1,6 +1,5 @@
 import { baseApi } from "./api";
 import type {
-  AiInsightsResponse,
   AnalyticsData,
   AppNotification,
   AuditLogEntry,
@@ -8,6 +7,7 @@ import type {
   AuditLogStats,
   AttendanceReport,
   AuthResponse,
+  AppliedAllocation,
   BudgetCategory,
   BudgetSummary,
   CategoryInput,
@@ -25,6 +25,7 @@ import type {
   Guest,
   GuestInput,
   GuestStatus,
+  OptimizationResponse,
   PublicEvent,
   RecoveryPoint,
   Staff,
@@ -141,16 +142,29 @@ export const budgetApi = baseApi.injectEndpoints({
       query: (eventId) => `/events/${eventId}/budget/summary`,
       providesTags: ["Budget", "Reports"],
     }),
-    getBudgetInsights: b.query<AiInsightsResponse, number>({
-      query: (eventId) => `/events/${eventId}/budget/insights`,
-      providesTags: ["Budget"],
-    }),
-    generateBudgetInsights: b.mutation<AiInsightsResponse, number>({
-      query: (eventId) => ({
-        url: `/events/${eventId}/budget/insights`,
+    optimizeBudget: b.mutation<
+      OptimizationResponse,
+      { eventId: number; totalBudget?: number }
+    >({
+      query: ({ eventId, totalBudget }) => ({
+        url: `/events/${eventId}/budget/optimize`,
         method: "POST",
+        body:
+          totalBudget === undefined || Number.isNaN(totalBudget)
+            ? {}
+            : { totalBudget },
       }),
-      invalidatesTags: ["Budget"],
+    }),
+    applyOptimization: b.mutation<
+      BudgetSummary,
+      { eventId: number; allocations: AppliedAllocation[] }
+    >({
+      query: ({ eventId, allocations }) => ({
+        url: `/events/${eventId}/budget/optimize/apply`,
+        method: "POST",
+        body: { allocations },
+      }),
+      invalidatesTags: ["Budget", "Reports", "Dashboard"],
     }),
   }),
 });
@@ -530,8 +544,8 @@ export const {
   useUpdateCategoryMutation,
   useDeleteCategoryMutation,
   useBudgetSummaryQuery,
-  useGetBudgetInsightsQuery,
-  useGenerateBudgetInsightsMutation,
+  useOptimizeBudgetMutation,
+  useApplyOptimizationMutation,
 } = budgetApi;
 
 export const {

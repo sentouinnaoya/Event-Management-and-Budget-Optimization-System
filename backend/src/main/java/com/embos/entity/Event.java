@@ -106,10 +106,6 @@ public class Event {
     @Builder.Default
     private List<RecoveryPoint> recoveryPoints = new ArrayList<>();
 
-    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<EventAiInsight> aiInsights = new ArrayList<>();
-
     @OneToOne(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
     private EventBackup backup;
 }

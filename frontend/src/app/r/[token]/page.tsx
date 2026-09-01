@@ -154,7 +154,7 @@ export default function PublicRegisterPage() {
               Registration successful!
             </h2>
             <p className="mt-1 text-sm text-emerald-700">
-              You're all set. We'll email your ticket to{" "}
+              You&apos;re all set. We&apos;ll email your ticket to{" "}
               <strong>{done.email}</strong> once the organizer approves your
               registration.
             </p>
@@ -190,7 +190,7 @@ export default function PublicRegisterPage() {
                 />
                 <FieldError message={errors.email?.message} />
                 <p className="mt-1 text-xs text-slate-500">
-                  We'll email you here once the organizer approves or rejects
+                  We&apos;ll email you here once the organizer approves or rejects
                   your registration.
                 </p>
               </div>
