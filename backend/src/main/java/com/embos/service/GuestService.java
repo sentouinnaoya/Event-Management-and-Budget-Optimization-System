@@ -139,6 +139,10 @@ public class GuestService {
         return new GuestDtos.PublicEventResponse(
                 event.getId(), event.getName(), event.getDescription(), event.getDate(),
                 event.getVenue(), event.getCapacity(), event.getRegistrationDeadline(),
+                event.getEventType(),
+                event.getStartTime() == null ? null : event.getStartTime().toString(),
+                event.getEndTime() == null ? null : event.getEndTime().toString(),
+                event.getContactEmail(), event.getAddress(),
                 event.getStatus().name(), registered, event.getRegistrationToken());
     }
 

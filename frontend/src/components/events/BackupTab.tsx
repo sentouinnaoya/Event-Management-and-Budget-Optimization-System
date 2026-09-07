@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   useCreateRecoveryPointMutation,
+  useDeleteRecoveryPointMutation,
   useGetBackupQuery,
   useListEventLogsQuery,
   useListRecoveryPointsQuery,
@@ -49,11 +50,14 @@ export default function BackupTab({ eventId }: { eventId: number }) {
   const [updateBackup] = useUpdateBackupMutation();
   const [createRecoveryPoint] = useCreateRecoveryPointMutation();
   const [restoreRecoveryPoint] = useRestoreRecoveryPointMutation();
+  const [deleteRecoveryPoint] = useDeleteRecoveryPointMutation();
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ type: "error" | "success"; text: string } | null>(null);
   const [recoveryPointLabel, setRecoveryPointLabel] = useState("");
   const [restoringId, setRestoringId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [confirmRestore, setConfirmRestore] = useState<{ id: number; label: string } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: number; label: string } | null>(null);
   const {
     register,
     handleSubmit,
@@ -106,13 +110,13 @@ export default function BackupTab({ eventId }: { eventId: number }) {
 
   async function onCreateRecoveryPoint() {
     if (!recoveryPointLabel.trim()) {
-      setMsg({ type: "error", text: "Enter a label for the recovery point." });
+      setMsg({ type: "error", text: "Enter a label for the draft." });
       return;
     }
     try {
       await createRecoveryPoint({ eventId, label: recoveryPointLabel.trim() }).unwrap();
       setRecoveryPointLabel("");
-      setMsg({ type: "success", text: "Recovery point created." });
+      setMsg({ type: "success", text: "Draft created." });
     } catch (e) {
       setMsg({ type: "error", text: apiError(e) });
     }
@@ -127,6 +131,19 @@ export default function BackupTab({ eventId }: { eventId: number }) {
     } catch (e) {
       setMsg({ type: "error", text: apiError(e) });
       setRestoringId(null);
+    }
+  }
+
+  async function onDelete(recoveryPointId: number) {
+    setDeletingId(recoveryPointId);
+    try {
+      await deleteRecoveryPoint({ eventId, recoveryPointId }).unwrap();
+      setConfirmDelete(null);
+      setMsg({ type: "success", text: "Draft deleted." });
+    } catch (e) {
+      setMsg({ type: "error", text: apiError(e) });
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -211,23 +228,23 @@ export default function BackupTab({ eventId }: { eventId: number }) {
 
       <Card>
         <CardHeader
-          title="Recovery points"
+          title="Drafts"
           subtitle="Save a copy of the plan (budget, vendors, staff, open tasks) to restore into a new event"
         />
         <div className="flex items-end gap-3">
           <div className="flex-1">
-            <Label>Recovery point label</Label>
+            <Label>Draft label</Label>
             <Input
               placeholder="e.g. Before cancellation"
               value={recoveryPointLabel}
               onChange={(e) => setRecoveryPointLabel(e.target.value)}
             />
           </div>
-          <Button onClick={onCreateRecoveryPoint}>Create recovery point</Button>
+          <Button onClick={onCreateRecoveryPoint}>Create draft</Button>
         </div>
         {!recoveryPoints || recoveryPoints.length === 0 ? (
           <div className="mt-4">
-            <EmptyState title="No recovery points yet" />
+            <EmptyState title="No drafts yet" />
           </div>
         ) : (
           <div className="mt-4 overflow-x-auto">
@@ -258,16 +275,26 @@ export default function BackupTab({ eventId }: { eventId: number }) {
                       )}
                     </td>
                     <td className="py-3 text-right">
-                      {!s.restoredEventId && (
-                        <Button
-                          variant="secondary"
-                          className="px-3 py-1.5 text-xs"
-                          loading={restoringId === s.id}
-                          onClick={() => setConfirmRestore({ id: s.id, label: s.label })}
+                      <div className="flex items-center justify-end gap-2">
+                        {!s.restoredEventId && (
+                          <Button
+                            variant="secondary"
+                            className="px-3 py-1.5 text-xs"
+                            loading={restoringId === s.id}
+                            onClick={() => setConfirmRestore({ id: s.id, label: s.label })}
+                          >
+                            Restore
+                          </Button>
+                        )}
+                        <button
+                          type="button"
+                          className="text-xs font-medium text-red-600 hover:text-red-700"
+                          disabled={deletingId === s.id}
+                          onClick={() => setConfirmDelete({ id: s.id, label: s.label })}
                         >
-                          Restore
-                        </Button>
-                      )}
+                          {deletingId === s.id ? "Deleting…" : "Delete"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -280,7 +307,7 @@ export default function BackupTab({ eventId }: { eventId: number }) {
       <Card>
         <CardHeader
           title="Audit log"
-          subtitle="History of status changes, backups, and recovery-point actions"
+          subtitle="History of status changes, backups, and draft actions"
         />
         {!logs || logs.length === 0 ? (
           <EmptyState title="No activity yet" />
@@ -302,10 +329,9 @@ export default function BackupTab({ eventId }: { eventId: number }) {
         )}
       </Card>
 
-      <Modal
-        open={confirmRestore !== null}
+      <Modal open={confirmRestore !== null}
         onClose={() => setConfirmRestore(null)}
-        title="Restore recovery point"
+        title="Restore draft"
       >
         <div className="space-y-3">
           <p className="text-sm text-slate-500">
@@ -322,6 +348,30 @@ export default function BackupTab({ eventId }: { eventId: number }) {
               onClick={() => confirmRestore && onRestore(confirmRestore.id)}
             >
               Restore
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        open={confirmDelete !== null}
+        onClose={() => setConfirmDelete(null)}
+        title="Delete draft"
+      >
+        <div className="space-y-3">
+          <p className="text-sm text-slate-500">
+            Delete &quot;{confirmDelete?.label}&quot;? This permanently removes the saved draft.
+          </p>
+          <div className="flex justify-end gap-2 pt-1">
+            <Button type="button" variant="secondary" onClick={() => setConfirmDelete(null)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              loading={deletingId !== null}
+              onClick={() => confirmDelete && onDelete(confirmDelete.id)}
+            >
+              Delete
             </Button>
           </div>
         </div>

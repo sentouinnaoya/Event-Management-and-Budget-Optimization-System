@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { CalendarDays, CheckCircle2, MapPin, Users } from "lucide-react";
+import { CalendarDays, CheckCircle2, Clock, MapPin, Users } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -114,6 +114,19 @@ export default function PublicRegisterPage() {
                 <MapPin className="h-3.5 w-3.5" />
                 {event.venue}
               </span>
+              {event.startTime && (
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 text-xs text-indigo-100">
+                  <Clock className="h-3.5 w-3.5" />
+                  {event.startTime.slice(0, 5)}
+                  {event.endTime ? ` – ${event.endTime.slice(0, 5)}` : ""}
+                </span>
+              )}
+              {event.address && (
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 text-xs text-indigo-100">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {event.address}
+                </span>
+              )}
             </div>
           </div>
           <div className="space-y-4 p-6">

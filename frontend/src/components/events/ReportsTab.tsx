@@ -266,7 +266,6 @@ export default function ReportsTab({ eventId }: { eventId: number }) {
                   <th className="pb-2 pr-4 font-medium">Day</th>
                   <th className="pb-2 pr-4 font-medium">Date</th>
                   <th className="pb-2 pr-4 font-medium">Spent</th>
-                  <th className="pb-2 pr-4 font-medium">Registered</th>
                   <th className="pb-2 pr-4 font-medium">Tasks created</th>
                   <th className="pb-2 pr-4 font-medium">Tasks due</th>
                   <th className="pb-2 pr-4 font-medium">Tasks done</th>
@@ -293,7 +292,6 @@ export default function ReportsTab({ eventId }: { eventId: number }) {
                     <td className="py-3 pr-4 text-slate-800">
                       {formatMoney(day.totalSpent)}
                     </td>
-                    <td className="py-3 pr-4 text-slate-600">{day.registered}</td>
                     <td className="py-3 pr-4 text-slate-600">
                       {day.tasksCreated}
                     </td>
@@ -332,13 +330,11 @@ export default function ReportsTab({ eventId }: { eventId: number }) {
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                   {[
                     { label: "Spent", value: formatMoney(daily.data.totalSpent) },
-                    { label: "Registered", value: String(daily.data.registered) },
                     { label: "Approved", value: String(daily.data.approved) },
                     { label: "Attended", value: String(daily.data.attended) },
                     { label: "Absent", value: String(daily.data.absent) },
                     { label: "Tasks done", value: String(daily.data.tasksCompleted) },
                     { label: "Tasks due", value: String(daily.data.tasksDue) },
-                    { label: "Vendors added", value: String(daily.data.vendorsAdded) },
                   ].map((item) => (
                     <div key={item.label} className="rounded-lg bg-slate-50 p-3">
                       <p className="text-xs text-slate-500">{item.label}</p>

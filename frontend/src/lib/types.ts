@@ -52,6 +52,11 @@ export interface Event {
   venue: string;
   capacity: number;
   registrationDeadline?: string;
+  eventType?: string;
+  startTime?: string;
+  endTime?: string;
+  contactEmail?: string;
+  address?: string;
   status: EventStatus;
   registrationToken?: string;
   organizerName: string;
@@ -67,6 +72,11 @@ export interface EventInput {
   venue: string;
   capacity: number;
   registrationDeadline?: string;
+  eventType?: string;
+  startTime?: string;
+  endTime?: string;
+  contactEmail?: string;
+  address?: string;
 }
 
 export type AlertLevel = "OK" | "WARNING" | "EXCEEDED";
@@ -213,6 +223,11 @@ export interface PublicEvent {
   venue: string;
   capacity: number;
   registrationDeadline?: string;
+  eventType?: string;
+  startTime?: string;
+  endTime?: string;
+  contactEmail?: string;
+  address?: string;
   status: string;
   registeredCount: number;
   registrationToken: string;

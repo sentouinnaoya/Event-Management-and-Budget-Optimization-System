@@ -134,7 +134,14 @@ function EventsContent() {
                 >
                   {event.name}
                 </Link>
-                <StatusBadge status={event.status} />
+                <div className="flex shrink-0 items-center gap-2">
+                  {event.eventType && event.eventType !== "Other" && (
+                    <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-600">
+                      {event.eventType}
+                    </span>
+                  )}
+                  <StatusBadge status={event.status} />
+                </div>
               </div>
               <p className="text-sm text-slate-500 line-clamp-2">
                 {event.description || "No description provided."}

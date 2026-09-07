@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -54,5 +55,15 @@ public class RecoveryPointController {
         Event event = eventService.getOwnedEvent(eventId, principal.user());
         return ResponseEntity.ok(
                 recoveryPointService.restore(event, recoveryPointId, principal.user().getFullName()));
+    }
+
+    @DeleteMapping("/{recoveryPointId}")
+    public ResponseEntity<Void> delete(
+            @AuthenticationPrincipal AppUserDetails principal,
+            @PathVariable Long eventId,
+            @PathVariable Long recoveryPointId) {
+        Event event = eventService.getOwnedEvent(eventId, principal.user());
+        recoveryPointService.delete(event, recoveryPointId, principal.user().getFullName());
+        return ResponseEntity.noContent().build();
     }
 }

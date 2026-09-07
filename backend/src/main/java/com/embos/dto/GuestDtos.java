@@ -40,6 +40,11 @@ public final class GuestDtos {
             String venue,
             Integer capacity,
             LocalDate registrationDeadline,
+            String eventType,
+            String startTime,
+            String endTime,
+            String contactEmail,
+            String address,
             String status,
             long registeredCount,
             String registrationToken) {

@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 public final class EventDtos {
 
@@ -17,7 +18,12 @@ public final class EventDtos {
             @Min(1) Integer durationInDays,
             @NotBlank @Size(max = 200) String venue,
             @NotNull @Min(1) Integer capacity,
-            LocalDate registrationDeadline) {
+            LocalDate registrationDeadline,
+            @Size(max = 50) String eventType,
+            LocalTime startTime,
+            LocalTime endTime,
+            @Size(max = 150) String contactEmail,
+            @Size(max = 500) String address) {
     }
 
     public record Response(
@@ -29,6 +35,11 @@ public final class EventDtos {
             String venue,
             Integer capacity,
             LocalDate registrationDeadline,
+            String eventType,
+            LocalTime startTime,
+            LocalTime endTime,
+            String contactEmail,
+            String address,
             String status,
             String registrationToken,
             String organizerName,

@@ -100,6 +100,15 @@ export default function OverviewTab({ eventId }: { eventId: number }) {
         : formatDate(event.date),
     ],
     ["Venue", event.venue],
+    ["Address", event.address || "—"],
+    [
+      "Time",
+      event.startTime
+        ? `${event.startTime.slice(0, 5)}${event.endTime ? " – " + event.endTime.slice(0, 5) : ""}`
+        : "—",
+    ],
+    ["Event type", event.eventType || "—"],
+    ["Contact", event.contactEmail || "—"],
     ["Capacity", String(event.capacity)],
     [
       "Registration deadline",

@@ -77,6 +77,11 @@ public class EventService {
                 .venue(request.venue().trim())
                 .capacity(request.capacity())
                 .registrationDeadline(request.registrationDeadline())
+                .eventType(defaultEventType(request.eventType()))
+                .startTime(request.startTime())
+                .endTime(request.endTime())
+                .contactEmail(request.contactEmail() == null || request.contactEmail().isBlank() ? null : request.contactEmail().trim())
+                .address(request.address() == null || request.address().isBlank() ? null : request.address().trim())
                 .status(EventStatus.DRAFT)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
@@ -98,6 +103,11 @@ public class EventService {
         event.setVenue(request.venue().trim());
         event.setCapacity(request.capacity());
         event.setRegistrationDeadline(request.registrationDeadline());
+        event.setEventType(defaultEventType(request.eventType()));
+        event.setStartTime(request.startTime());
+        event.setEndTime(request.endTime());
+        event.setContactEmail(request.contactEmail() == null || request.contactEmail().isBlank() ? null : request.contactEmail().trim());
+        event.setAddress(request.address() == null || request.address().isBlank() ? null : request.address().trim());
         event.setUpdatedAt(LocalDateTime.now());
         Event saved = eventRepository.save(event);
         auditLogService.log(currentUser.getId(), currentUser.getFullName(), currentUser.getRole().name(),
@@ -199,6 +209,13 @@ public class EventService {
 
     private int duration(Integer durationInDays) {
         return durationInDays == null ? 1 : durationInDays;
+    }
+
+    private String defaultEventType(String eventType) {
+        if (eventType == null || eventType.isBlank()) {
+            return "Other";
+        }
+        return eventType.trim();
     }
 
     private EventStatus parseStatus(String status) {

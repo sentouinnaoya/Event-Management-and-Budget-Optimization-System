@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { eventSchema, type EventInputZ } from "../../../lib/schemas";
 import { useCreateEventMutation } from "../../../lib/apiSlices";
+import { useAppSelector } from "../../../lib/hooks";
 import ProtectedRoute from "../../../components/ProtectedRoute";
 import AppShell from "../../../components/AppShell";
 import {
@@ -15,6 +16,7 @@ import {
   FieldError,
   Input,
   Label,
+  Select,
   Textarea,
   apiError,
 } from "../../../components/ui";
@@ -29,16 +31,37 @@ export default function NewEventPage() {
   );
 }
 
+const EVENT_TYPES = ["Conference", "Workshop", "Concert", "Corporate", "Social", "Other…"];
+
 function NewEventForm() {
   const router = useRouter();
+  const user = useAppSelector((s) => s.auth.user);
   const [create, { isLoading, error }] = useCreateEventMutation();
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<z.input<typeof eventSchema>, unknown, EventInputZ>({
     resolver: zodResolver(eventSchema),
+    defaultValues: {
+      eventType: "Conference",
+      contactEmail: user?.email ?? "",
+    },
   });
+
+  const selectedType = watch("eventType") ?? "";
+  const isCustomType = EVENT_TYPES.includes(selectedType)
+    ? selectedType === "Other…"
+    : true;
+
+  function resolveEventType(): string {
+    if (isCustomType && (!selectedType || selectedType === "Other…")) {
+      return "Other";
+    }
+    return selectedType;
+  }
 
   async function onSubmit(data: EventInputZ) {
     try {
@@ -50,6 +73,11 @@ function NewEventForm() {
         venue: data.venue,
         capacity: data.capacity,
         registrationDeadline: data.registrationDeadline || undefined,
+        eventType: resolveEventType(),
+        startTime: data.startTime || undefined,
+        endTime: data.endTime || undefined,
+        contactEmail: data.contactEmail?.trim() || undefined,
+        address: data.address?.trim() || undefined,
       }).unwrap();
       router.push(`/events/${result.id}`);
     } catch {
@@ -119,6 +147,59 @@ function NewEventForm() {
                 {...register("capacity")}
               />
               <FieldError message={errors.capacity?.message} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <Label>Event type</Label>
+              <Select
+                invalid={!!errors.eventType}
+                {...register("eventType")}
+              >
+                {EVENT_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </Select>
+              <FieldError message={errors.eventType?.message} />
+            </div>
+            <div>
+              <Label>Contact email</Label>
+              <Input
+                type="email"
+                placeholder="Contact person email"
+                invalid={!!errors.contactEmail}
+                {...register("contactEmail")}
+              />
+              <FieldError message={errors.contactEmail?.message} />
+            </div>
+          </div>
+          {isCustomType && (
+            <div>
+              <Label>Custom event type</Label>
+              <Input
+                placeholder="e.g. Seminar"
+                value={selectedType === "Other…" ? "" : selectedType}
+                onChange={(e) => setValue("eventType", e.target.value)}
+              />
+            </div>
+          )}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div>
+              <Label>Start time</Label>
+              <Input type="time" {...register("startTime")} />
+            </div>
+            <div>
+              <Label>End time</Label>
+              <Input type="time" {...register("endTime")} />
+            </div>
+            <div>
+              <Label>Address</Label>
+              <Input
+                placeholder="Street, city (optional)"
+                {...register("address")}
+              />
             </div>
           </div>
           <div>

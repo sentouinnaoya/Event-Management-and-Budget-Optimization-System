@@ -51,9 +51,8 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
   const { data, isLoading } = useBudgetSummaryQuery(eventId);
   const [addCategory, { isLoading: adding }] = useAddCategoryMutation();
   const [removeCategory] = useDeleteCategoryMutation();
-  const [updateCategory, { isLoading: saving }] = useUpdateCategoryMutation();
   const [error, setError] = useState<string | null>(null);
-  const [editing, setEditing] = useState<BudgetCategory | null>(null);
+  const [editCategory, setEditCategory] = useState<BudgetCategory | null>(null);
 
   const [optimizeBudget, { isLoading: optimizing }] = useOptimizeBudgetMutation();
   const [applyOptimization, { isLoading: applying }] = useApplyOptimizationMutation();
@@ -83,18 +82,15 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
 
   async function onSubmit(input: CategoryInputZ) {
     try {
-      const body = {
-        name: input.name,
-        allocatedAmount: input.allocatedAmount,
-        alertThresholdPct: input.alertThresholdPct,
-        priority: input.priority ?? 3,
-      };
-      if (editing) {
-        await updateCategory({ eventId, id: editing.id, body }).unwrap();
-        setEditing(null);
-      } else {
-        await addCategory({ eventId, body }).unwrap();
-      }
+      await addCategory({
+        eventId,
+        body: {
+          name: input.name,
+          allocatedAmount: input.allocatedAmount,
+          alertThresholdPct: input.alertThresholdPct,
+          priority: input.priority ?? 3,
+        },
+      }).unwrap();
       reset();
       setError(null);
     } catch (e) {
@@ -102,21 +98,8 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
     }
   }
 
-  function startEdit(c: BudgetCategory) {
-    setEditing(c);
-    setError(null);
-    reset({
-      name: c.name,
-      allocatedAmount: c.allocatedAmount,
-      alertThresholdPct: c.alertThresholdPct,
-      priority: c.priority ?? 3,
-    });
-  }
-
-  function cancelEdit() {
-    setEditing(null);
-    setError(null);
-    reset();
+  function openEdit(c: BudgetCategory) {
+    setEditCategory(c);
   }
 
   async function onOptimize(e?: React.FormEvent) {
@@ -227,10 +210,7 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
-          <CardHeader
-            title={editing ? "Edit budget category" : "Add budget category"}
-            subtitle={editing ? `Editing "${editing.name}"` : undefined}
-          />
+          <CardHeader title="Add budget category" />
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
             <div>
               <Label required>Category name</Label>
@@ -280,18 +260,9 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
               </div>
             )}
             <div className="flex items-center gap-2">
-              <Button type="submit" loading={adding || saving}>
-                {editing ? "Save changes" : "Add category"}
+              <Button type="submit" loading={adding}>
+                Add category
               </Button>
-              {editing && (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={cancelEdit}
-                >
-                  Cancel
-                </Button>
-              )}
             </div>
           </form>
         </Card>
@@ -404,7 +375,7 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
                     <td className="py-3 text-right">
                       <div className="flex items-center justify-end gap-3">
                         <button
-                          onClick={() => startEdit(c)}
+                          onClick={() => openEdit(c)}
                           className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
                         >
                           Edit
@@ -449,7 +420,132 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
           setOptimizerError(null);
         }}
       />
+
+      {editCategory && (
+        <EditCategoryModal
+          eventId={eventId}
+          category={editCategory}
+          onClose={() => setEditCategory(null)}
+        />
+      )}
     </div>
+  );
+}
+
+function EditCategoryModal({
+  eventId,
+  category,
+  onClose,
+}: {
+  eventId: number;
+  category: BudgetCategory;
+  onClose: () => void;
+}) {
+  const [updateCategory, { isLoading: saving }] = useUpdateCategoryMutation();
+  const [error, setError] = useState<string | null>(null);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<z.input<typeof categorySchema>, unknown, CategoryInputZ>({
+    resolver: zodResolver(categorySchema),
+    defaultValues: {
+      name: category.name,
+      allocatedAmount: category.allocatedAmount,
+      alertThresholdPct: category.alertThresholdPct,
+      priority: category.priority ?? 3,
+    },
+  });
+
+  async function onSubmit(input: CategoryInputZ) {
+    try {
+      await updateCategory({
+        eventId,
+        id: category.id,
+        body: {
+          name: input.name,
+          allocatedAmount: input.allocatedAmount,
+          alertThresholdPct: input.alertThresholdPct,
+          priority: input.priority ?? 3,
+        },
+      }).unwrap();
+      reset();
+      setError(null);
+      onClose();
+    } catch (e) {
+      setError(apiError(e));
+    }
+  }
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={`Edit "${category.name}"`}
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+        <div>
+          <Label required>Category name</Label>
+          <Input
+            placeholder="e.g. Venue, Food, Marketing"
+            invalid={!!errors.name}
+            {...register("name")}
+          />
+          <FieldError message={errors.name?.message} />
+        </div>
+        <div>
+          <Label required>Allocated amount</Label>
+          <Input
+            type="number"
+            step="0.01"
+            min={0}
+            invalid={!!errors.allocatedAmount}
+            {...register("allocatedAmount")}
+          />
+          <FieldError message={errors.allocatedAmount?.message} />
+        </div>
+        <div>
+          <Label required>Alert threshold (%)</Label>
+          <Input
+            type="number"
+            min={0}
+            max={100}
+            invalid={!!errors.alertThresholdPct}
+            {...register("alertThresholdPct")}
+          />
+          <FieldError message={errors.alertThresholdPct?.message} />
+        </div>
+        <div>
+          <Label required>Priority</Label>
+          <Select invalid={!!errors.priority} {...register("priority")}>
+            {[5, 4, 3, 2, 1].map((p) => (
+              <option key={p} value={p}>
+                {p} — {PRIORITY_LABELS[p]}
+              </option>
+            ))}
+          </Select>
+          <FieldError message={errors.priority?.message} />
+        </div>
+        {error && (
+          <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+        <div className="flex justify-end gap-2 pt-1">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onClose}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" loading={saving}>
+            Save changes
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }
 

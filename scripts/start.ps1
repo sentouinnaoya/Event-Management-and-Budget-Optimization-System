@@ -15,14 +15,58 @@ $FrontendLogFile = Join-Path $LogsDir "frontend.log"
 $MavenPath = Join-Path $env:LOCALAPPDATA "Programs\apache-maven\apache-maven-3.9.16\bin\mvn.cmd"
 $NpmExe    = "C:\Program Files\nodejs\npm.cmd"
 
+# --- Email (Resend) ---
+# Read from .env.local (gitignored) if present; never commit real keys.
+$envFile = Join-Path $ProjectRoot ".env.local"
+if (Test-Path $envFile) {
+    Get-Content $envFile | ForEach-Object {
+        if ($_ -match '^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$') {
+            [System.Environment]::SetEnvironmentVariable($matches[1], $matches[2], "Process")
+        }
+    }
+}
+if (-not $env:RESEND_API_KEY) {
+    $env:RESEND_API_KEY = "re_placeholder_change_me"
+}
+if (-not $env:EMBOS_MAIL_FROM) {
+    $env:EMBOS_MAIL_FROM = "EMBOS <onboarding@resend.dev>"
+}
+
 function Test-Port($p) {
     return [bool](Get-NetTCPConnection -LocalPort $p -State Listen -ErrorAction SilentlyContinue)
 }
 
+function Get-Descendants($parentId) {
+    $all = @(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue)
+    $result = @()
+    $frontier = @($parentId)
+    while ($frontier.Count -gt 0) {
+        $next = @()
+        foreach ($p in $frontier) {
+            foreach ($c in @($all | Where-Object { $_.ParentProcessId -eq $p })) {
+                $result += $c.ProcessId
+                $next += $c.ProcessId
+            }
+        }
+        $frontier = $next
+    }
+    return $result
+}
+
 function Stop-Kids($parentId) {
-    Get-CimInstance Win32_Process -Filter "ParentProcessId = $parentId" -ErrorAction SilentlyContinue |
-        ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+    Get-Descendants $parentId | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }
     Stop-Process -Id $parentId -Force -ErrorAction SilentlyContinue
+}
+
+function Free-Port($port, $label) {
+    $conn = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
+    if ($conn) {
+        $owner = $conn[0].OwningProcess
+        Write-Host "[$label] port $port held by PID $owner, terminating..." -ForegroundColor Yellow
+        Get-Descendants $owner | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }
+        Stop-Process -Id $owner -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 2
+    }
 }
 
 function Wait-Port($port, $timeoutSec) {
@@ -48,8 +92,7 @@ function Start-Backend {
         }
     }
     if (Test-Port 8080) {
-        Write-Host "[backend] port 8080 already in use" -ForegroundColor Yellow
-        return 0
+        Free-Port 8080 "backend"
     }
     Write-Host "[backend] starting..." -ForegroundColor Cyan
     $p = Start-Process java -ArgumentList "-jar", "`"$BackendJar`"" `
@@ -67,8 +110,7 @@ function Start-Backend {
 
 function Start-Frontend {
     if (Test-Port 3000) {
-        Write-Host "[frontend] port 3000 already in use" -ForegroundColor Yellow
-        return 0
+        Free-Port 3000 "frontend"
     }
     Write-Host "[frontend] clearing cache and starting..." -ForegroundColor Cyan
     Remove-Item -LiteralPath (Join-Path $FrontendDir ".next") -Recurse -Force -ErrorAction SilentlyContinue

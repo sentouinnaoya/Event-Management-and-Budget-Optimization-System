@@ -137,7 +137,13 @@ export default function BrowsePage() {
                           {event.name}
                         </h2>
                       </div>
-                      {spotsLeft > 0 ? (
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        {event.eventType && event.eventType !== "Other" && (
+                          <span className="inline-block rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700">
+                            {event.eventType}
+                          </span>
+                        )}
+                        {spotsLeft > 0 ? (
                         <span className="mt-1 inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
                           {spotsLeft} spot{spotsLeft === 1 ? "" : "s"} left
                         </span>
@@ -145,8 +151,9 @@ export default function BrowsePage() {
                         <span className="mt-1 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
                           Full
                         </span>
-                      )}
+)}
                     </div>
+                  </div>
                   </div>
                   {event.description && (
                     <p className="mt-3 line-clamp-2 text-sm text-slate-500">
@@ -158,6 +165,12 @@ export default function BrowsePage() {
                       <MapPin className="h-4 w-4 shrink-0 text-slate-400" />
                       <span className="truncate">{event.venue}</span>
                     </div>
+                    {event.address && (
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <MapPin className="h-4 w-4 shrink-0 text-slate-400" />
+                        <span className="truncate">{event.address}</span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2 text-slate-600">
                       <Users className="h-4 w-4 shrink-0 text-slate-400" />
                       <span>

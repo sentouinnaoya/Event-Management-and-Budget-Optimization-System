@@ -100,6 +100,18 @@ public class RecoveryPointService {
     }
 
     @Transactional
+    public void delete(Event event, Long recoveryPointId, String actor) {
+        RecoveryPoint recoveryPoint = recoveryPointRepository.findByIdAndEventId(recoveryPointId, event.getId())
+                .orElseThrow(() -> new NotFoundException("Draft not found"));
+        eventLogService.log(event, "RECOVERY_POINT_DELETED", "Recovery point deleted: " + recoveryPoint.getLabel(), actor);
+        var u = SecurityUtils.currentUser();
+        auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
+                "RECOVERY_POINT_DELETED", "RecoveryPoint", recoveryPoint.getId(), recoveryPoint.getLabel(),
+                "Deleted recovery point: " + recoveryPoint.getLabel());
+        recoveryPointRepository.delete(recoveryPoint);
+    }
+
+    @Transactional
     public EventDtos.Response restore(Event source, Long recoveryPointId, String actor) {
         RecoveryPoint recoveryPoint = recoveryPointRepository.findByIdAndEventId(recoveryPointId, source.getId())
                 .orElseThrow(() -> new NotFoundException("Recovery point not found"));
@@ -246,7 +258,9 @@ public class RecoveryPointService {
         return new EventDtos.Response(
                 event.getId(), event.getName(), event.getDescription(), event.getDate(),
                 event.getDurationInDays(), event.getVenue(), event.getCapacity(),
-                event.getRegistrationDeadline(), event.getStatus().name(), event.getRegistrationToken(),
+                event.getRegistrationDeadline(), event.getEventType(),
+                event.getStartTime(), event.getEndTime(), event.getContactEmail(), event.getAddress(),
+                event.getStatus().name(), event.getRegistrationToken(),
                 event.getOrganizer().getFullName(), event.getCreatedAt(), event.getUpdatedAt());
     }
 

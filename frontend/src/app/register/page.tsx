@@ -9,7 +9,7 @@ import { registerSchema, type RegisterInput } from "../../lib/schemas";
 import { useRegisterMutation } from "../../lib/apiSlices";
 import { useAppDispatch, useAppSelector } from "../../lib/hooks";
 import { setCredentials } from "../../features/auth/authSlice";
-import { Button, FieldError, Input, Label, apiError } from "../../components/ui";
+import { Button, FieldError, Input, Label, PasswordInput, apiError } from "../../components/ui";
 import AuthShell from "../../components/AuthShell";
 
 export default function RegisterPage() {
@@ -86,8 +86,7 @@ export default function RegisterPage() {
           </div>
           <div>
             <Label required>Password</Label>
-            <Input
-              type="password"
+            <PasswordInput
               invalid={!!errors.password}
               {...field("password")}
             />

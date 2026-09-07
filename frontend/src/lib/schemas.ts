@@ -19,6 +19,11 @@ export const eventSchema = z.object({
   venue: z.string().min(2, "Venue is required"),
   capacity: z.coerce.number().min(1, "Capacity must be at least 1"),
   registrationDeadline: z.string().optional(),
+  eventType: z.string().min(1, "Select an event type").default("Conference"),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+  contactEmail: z.string().email("Enter a valid email address").optional().or(z.literal("")),
+  address: z.string().optional(),
 });
 
 export const categorySchema = z.object({

@@ -511,6 +511,16 @@ export const recoveryPointApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Events", "Dashboard"],
     }),
+    deleteRecoveryPoint: b.mutation<void, { eventId: number; recoveryPointId: number }>({
+      query: ({ eventId, recoveryPointId }) => ({
+        url: `/events/${eventId}/recovery-points/${recoveryPointId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_r, _e, { eventId }) => [
+        { type: "RecoveryPoints", id: eventId },
+        { type: "Logs", id: eventId },
+      ],
+    }),
   }),
 });
 
@@ -618,6 +628,7 @@ export const {
   useListRecoveryPointsQuery,
   useCreateRecoveryPointMutation,
   useRestoreRecoveryPointMutation,
+  useDeleteRecoveryPointMutation,
 } = recoveryPointApi;
 
 export const { useListEventLogsQuery } = logApi;

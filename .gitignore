@@ -1,0 +1,24 @@
+# Node
+node_modules/
+frontend/node_modules/
+.next/
+frontend/.next/
+
+# Build output
+backend/target/
+target/
+
+# Logs
+logs/
+*.log
+
+# Environment / secrets (never commit)
+.env
+.env.local
+.env.*.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

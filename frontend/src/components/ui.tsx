@@ -2,12 +2,14 @@
 
 import {
   forwardRef,
+  useState,
   type ButtonHTMLAttributes,
   type InputHTMLAttributes,
   type ReactNode,
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 export function cn(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
@@ -101,6 +103,35 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     />
   );
 });
+
+export const PasswordInput = forwardRef<HTMLInputElement, InputProps>(
+  function PasswordInput({ className, invalid, ...props }, ref) {
+    const [visible, setVisible] = useState(false);
+    return (
+      <div className="relative">
+        <Input
+          ref={ref}
+          type={visible ? "text" : "password"}
+          invalid={invalid}
+          className={cn("pr-10", className)}
+          {...props}
+        />
+        <button
+          type="button"
+          onClick={() => setVisible((v) => !v)}
+          aria-label={visible ? "Hide password" : "Show password"}
+          className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 transition-colors hover:text-slate-600"
+        >
+          {visible ? (
+            <EyeOff className="h-4 w-4" />
+          ) : (
+            <Eye className="h-4 w-4" />
+          )}
+        </button>
+      </div>
+    );
+  }
+);
 
 export const Textarea = forwardRef<
   HTMLTextAreaElement,
