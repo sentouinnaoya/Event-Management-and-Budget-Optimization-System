@@ -40,6 +40,7 @@ public class BudgetService {
 
     @Transactional
     public BudgetDtos.CategoryResponse addCategory(Event event, BudgetDtos.CategoryRequest request, String actor) {
+        EventService.assertNotLocked(event);
         if (categoryRepository.existsByEventIdAndName(event.getId(), request.name().trim())) {
             throw new ConflictException("A budget category with this name already exists");
         }
@@ -64,6 +65,7 @@ public class BudgetService {
 
     @Transactional
     public BudgetDtos.CategoryResponse updateCategory(Event event, Long categoryId, BudgetDtos.CategoryRequest request, String actor) {
+        EventService.assertNotLocked(event);
         BudgetCategory category = getCategory(event, categoryId);
         category.setName(request.name().trim());
         category.setAllocatedAmount(request.allocatedAmount());
@@ -82,6 +84,7 @@ public class BudgetService {
 
     @Transactional
     public void deleteCategory(Event event, Long categoryId, String actor) {
+        EventService.assertNotLocked(event);
         BudgetCategory category = getCategory(event, categoryId);
         if (expenseRepository.existsByCategoryId(categoryId)) {
             throw new BadRequestException("Cannot delete a category that already has expenses");

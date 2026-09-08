@@ -26,6 +26,8 @@ public interface GuestRepository extends JpaRepository<Guest, Long> {
 
     List<Guest> findAllByEventIdAndStatusOrderByCreatedAtAsc(Long eventId, GuestStatus status);
 
+    List<Guest> findAllByEventIdAndStatusIn(Long eventId, List<GuestStatus> statuses);
+
     boolean existsByRegistrationCode(String registrationCode);
 
     @Query("SELECT COUNT(g) FROM Guest g")

@@ -1,7 +1,7 @@
 package com.embos.service;
 
 import com.embos.event.GuestStatusChangedEvent;
-import com.embos.mail.ResendClient;
+import com.embos.mail.BrevoClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -14,7 +14,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @RequiredArgsConstructor
 public class GuestEmailService {
 
-    private final ResendClient resendClient;
+    private final BrevoClient brevoClient;
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -60,7 +60,7 @@ public class GuestEmailService {
                 """.formatted(escape(event.eventName()), escape(event.eventName()),
                 escape(event.guestName()), escape(event.eventName()), eventDate,
                 venue, escape(code));
-        resendClient.send(event.guestEmail(), "You're confirmed for " + event.eventName() + " — here's your ticket", html);
+        brevoClient.send(event.guestEmail(), "You're confirmed for " + event.eventName() + " — here's your ticket", html);
     }
 
     private void sendRejected(GuestStatusChangedEvent event) {
@@ -76,8 +76,8 @@ public class GuestEmailService {
                   </p>
                 </div>
                 """.formatted(escape(event.eventName()));
-        resendClient.send(event.guestEmail(),
-                "Update on your registration for " + event.eventName(), html);
+brevoClient.send(event.guestEmail(),
+        "Update on your registration for " + event.eventName(), html);
     }
 
     private static String escape(String value) {

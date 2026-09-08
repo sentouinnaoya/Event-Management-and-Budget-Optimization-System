@@ -1,17 +1,25 @@
 "use client";
 
 import { useState } from "react";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { eventSchema, type EventInputZ } from "../../lib/schemas";
 import {
   useBudgetSummaryQuery,
   useChangeEventStatusMutation,
   useGetBackupQuery,
   useGetEventQuery,
   usePublishEventMutation,
+  useUpdateEventMutation,
 } from "../../lib/apiSlices";
 import {
   Button,
   Card,
   CardHeader,
+  FieldError,
+  Input,
+  Label,
   Modal,
   Textarea,
   apiError,
@@ -19,7 +27,13 @@ import {
   formatMoney,
 } from "../ui";
 
-export default function OverviewTab({ eventId }: { eventId: number }) {
+export default function OverviewTab({
+  eventId,
+  readOnly = false,
+}: {
+  eventId: number;
+  readOnly?: boolean;
+}) {
   const { data: event } = useGetEventQuery(eventId);
   const { data: budget } = useBudgetSummaryQuery(eventId, { skip: !event });
   const { data: backup } = useGetBackupQuery(eventId, {
@@ -27,13 +41,73 @@ export default function OverviewTab({ eventId }: { eventId: number }) {
   });
   const [publish, { isLoading: publishing }] = usePublishEventMutation();
   const [changeStatus] = useChangeEventStatusMutation();
+  const [updateEvent] = useUpdateEventMutation();
   const [copied, setCopied] = useState(false);
   const [msg, setMsg] = useState<{ type: "error" | "success"; text: string } | null>(null);
   const [reasonTarget, setReasonTarget] = useState<"SUSPENDED" | "FAILED" | null>(null);
   const [reason, setReason] = useState("");
   const [savingStatus, setSavingStatus] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editSaving, setEditSaving] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<z.input<typeof eventSchema>, unknown, EventInputZ>({
+    resolver: zodResolver(eventSchema),
+  });
 
   if (!event) return null;
+
+  const openEdit = () => {
+    reset({
+      name: event.name,
+      description: event.description ?? "",
+      date: event.date,
+      durationInDays: event.durationInDays ?? 1,
+      venue: event.venue,
+      capacity: event.capacity,
+      registrationDeadline: event.registrationDeadline ?? "",
+      eventType: event.eventType ?? "Conference",
+      startTime: event.startTime ?? "",
+      endTime: event.endTime ?? "",
+      contactEmail: event.contactEmail ?? "",
+      address: event.address ?? "",
+    });
+    setEditError(null);
+    setEditOpen(true);
+  }
+
+  async function onEditSubmit(input: EventInputZ) {
+    setEditSaving(true);
+    try {
+      await updateEvent({
+        id: eventId,
+        body: {
+          name: input.name,
+          description: input.description || undefined,
+          date: input.date,
+          durationInDays: input.durationInDays ?? 1,
+          venue: input.venue,
+          capacity: Number(input.capacity),
+          registrationDeadline: input.registrationDeadline || undefined,
+          eventType: input.eventType,
+          startTime: input.startTime || undefined,
+          endTime: input.endTime || undefined,
+          contactEmail: input.contactEmail || undefined,
+          address: input.address || undefined,
+        },
+      }).unwrap();
+      setEditOpen(false);
+      setMsg({ type: "success", text: "Event details updated." });
+    } catch (e) {
+      setEditError(apiError(e));
+    } finally {
+      setEditSaving(false);
+    }
+  }
 
   async function applyStatus(target: "SUSPENDED" | "FAILED") {
     setSavingStatus(true);
@@ -121,7 +195,20 @@ export default function OverviewTab({ eventId }: { eventId: number }) {
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <Card>
-        <CardHeader title="Event details" />
+        <CardHeader
+          title="Event details"
+          action={
+            !readOnly && (
+              <Button
+                variant="secondary"
+                className="px-3 py-1.5 text-xs"
+                onClick={openEdit}
+              >
+                Edit
+              </Button>
+            )
+          }
+        />
         {event.description && (
           <p className="mb-4 text-sm text-slate-600">{event.description}</p>
         )}
@@ -327,6 +414,103 @@ export default function OverviewTab({ eventId }: { eventId: number }) {
             </Button>
           </div>
         </div>
+      </Modal>
+
+      <Modal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit event details"
+      >
+        <form onSubmit={handleSubmit(onEditSubmit)} className="space-y-3">
+          <div>
+            <Label required>Name</Label>
+            <Input invalid={!!errors.name} {...register("name")} />
+            <FieldError message={errors.name?.message} />
+          </div>
+          <div>
+            <Label>Description</Label>
+            <Textarea rows={2} {...register("description")} />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <Label required>Event date</Label>
+              <Input type="date" invalid={!!errors.date} {...register("date")} />
+              <FieldError message={errors.date?.message} />
+            </div>
+            <div>
+              <Label required>Duration (days)</Label>
+              <Input
+                type="number"
+                min={1}
+                invalid={!!errors.durationInDays}
+                {...register("durationInDays")}
+              />
+              <FieldError message={errors.durationInDays?.message} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <Label required>Venue</Label>
+              <Input invalid={!!errors.venue} {...register("venue")} />
+              <FieldError message={errors.venue?.message} />
+            </div>
+            <div>
+              <Label>Address</Label>
+              <Input {...register("address")} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <Label required>Capacity</Label>
+              <Input
+                type="number"
+                min={1}
+                invalid={!!errors.capacity}
+                {...register("capacity")}
+              />
+              <FieldError message={errors.capacity?.message} />
+            </div>
+            <div>
+              <Label required>Event type</Label>
+              <Input invalid={!!errors.eventType} {...register("eventType")} />
+              <FieldError message={errors.eventType?.message} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <Label>Start time</Label>
+              <Input type="time" {...register("startTime")} />
+            </div>
+            <div>
+              <Label>End time</Label>
+              <Input type="time" {...register("endTime")} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <Label>Contact email</Label>
+              <Input type="email" invalid={!!errors.contactEmail} {...register("contactEmail")} />
+              <FieldError message={errors.contactEmail?.message} />
+            </div>
+            <div>
+              <Label>Registration deadline</Label>
+              <Input type="date" {...register("registrationDeadline")} />
+            </div>
+          </div>
+          {editError && (
+            <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+              {editError}
+            </div>
+          )}
+          <div className="flex justify-end gap-2 pt-1">
+            <Button type="button" variant="secondary" onClick={() => setEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" loading={editSaving}>
+              Save changes
+            </Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

@@ -31,6 +31,7 @@ public class StaffService {
 
     @Transactional
     public StaffDtos.Response create(Event event, StaffDtos.Request request) {
+        EventService.assertNotLocked(event);
         Staff staff = Staff.builder()
                 .event(event)
                 .name(request.name().trim())
@@ -48,6 +49,7 @@ public class StaffService {
 
     @Transactional
     public StaffDtos.Response update(Event event, Long staffId, StaffDtos.Request request) {
+        EventService.assertNotLocked(event);
         Staff staff = getStaff(event, staffId);
         staff.setName(request.name().trim());
         staff.setResponsibility(request.responsibility().trim());
@@ -62,6 +64,7 @@ public class StaffService {
 
     @Transactional
     public void delete(Event event, Long staffId) {
+        EventService.assertNotLocked(event);
         Staff staff = getStaff(event, staffId);
         var u = SecurityUtils.currentUser();
         auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),

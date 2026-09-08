@@ -30,7 +30,7 @@ import {
   formatDate,
 } from "../ui";
 
-export default function TasksTab({ eventId }: { eventId: number }) {
+export default function TasksTab({ eventId, readOnly = false }: { eventId: number; readOnly?: boolean }) {
   const { data: tasks, isLoading } = useListTasksQuery(eventId);
   const { data: staff } = useListStaffQuery(eventId);
   const [addTask] = useAddTaskMutation();
@@ -110,9 +110,11 @@ export default function TasksTab({ eventId }: { eventId: number }) {
         title="Tasks"
         subtitle={`${tasks.length} task(s)`}
         action={
-          <Button onClick={openCreate} className="px-3 py-1.5 text-xs">
-            Add task
-          </Button>
+          !readOnly && (
+            <Button onClick={openCreate} className="px-3 py-1.5 text-xs">
+              Add task
+            </Button>
+          )
         }
       />
       {tasks.length === 0 ? (
@@ -158,21 +160,25 @@ export default function TasksTab({ eventId }: { eventId: number }) {
                     <StatusBadge status={t.priority} />
                   </td>
                   <td className="py-3 pr-4">
-                    <Select
-                      value={t.status}
-                      onChange={(e) =>
-                        updateStatus({
-                          eventId,
-                          id: t.id,
-                          status: e.target.value as Task["status"],
-                        })
-                      }
-                      className="w-32 px-2 py-1 text-xs"
-                    >
-                      <option value="TODO">To do</option>
-                      <option value="IN_PROGRESS">In progress</option>
-                      <option value="DONE">Done</option>
-                    </Select>
+                    {readOnly ? (
+                      <StatusBadge status={t.status} />
+                    ) : (
+                      <Select
+                        value={t.status}
+                        onChange={(e) =>
+                          updateStatus({
+                            eventId,
+                            id: t.id,
+                            status: e.target.value as Task["status"],
+                          })
+                        }
+                        className="w-32 px-2 py-1 text-xs"
+                      >
+                        <option value="TODO">To do</option>
+                        <option value="IN_PROGRESS">In progress</option>
+                        <option value="DONE">Done</option>
+                      </Select>
+                    )}
                   </td>
                   <td className="py-3 pr-4 text-slate-600">
                     {t.status === "DONE" && t.completedAt
@@ -180,23 +186,25 @@ export default function TasksTab({ eventId }: { eventId: number }) {
                       : "—"}
                   </td>
                   <td className="py-3 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => openEdit(t)}
-                        className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (confirm(`Delete task "${t.title}"?`))
-                            removeTask({ eventId, id: t.id });
-                        }}
-                        className="text-xs font-medium text-red-600 hover:text-red-700"
-                      >
-                        Delete
-                      </button>
-                    </div>
+                    {!readOnly && (
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => openEdit(t)}
+                          className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`Delete task "${t.title}"?`))
+                              removeTask({ eventId, id: t.id });
+                          }}
+                          className="text-xs font-medium text-red-600 hover:text-red-700"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}

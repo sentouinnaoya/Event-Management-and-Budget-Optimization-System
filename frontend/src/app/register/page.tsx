@@ -21,7 +21,10 @@ export default function RegisterPage() {
     register: field,
     handleSubmit,
     formState: { errors },
-  } = useForm<RegisterInput>({ resolver: zodResolver(registerSchema) });
+  } = useForm<RegisterInput>({
+    resolver: zodResolver(registerSchema),
+    mode: "onTouched",
+  });
 
   useEffect(() => {
     if (initialized && user) router.replace("/dashboard");

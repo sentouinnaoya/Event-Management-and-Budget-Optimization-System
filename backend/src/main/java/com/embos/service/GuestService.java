@@ -49,6 +49,7 @@ public class GuestService {
 
     @Transactional
     public GuestDtos.Response addManual(Event event, GuestDtos.Request request, String actor) {
+        EventService.assertNotLocked(event);
         String email = request.email().trim().toLowerCase();
         if (guestRepository.existsByEventIdAndEmail(event.getId(), email)) {
             throw new ConflictException("A guest with this email is already registered");
@@ -80,6 +81,7 @@ public class GuestService {
 
     @Transactional
     public GuestDtos.Response updateStatus(Event event, Long guestId, String status, String actor) {
+        EventService.assertNotLocked(event);
         Guest guest = getGuest(event, guestId);
         GuestStatus newStatus = parseStatus(status);
         GuestStatus oldStatus = guest.getStatus();
@@ -183,7 +185,7 @@ public class GuestService {
         return guestMapper.toResponse(saved);
     }
 
-    private String generateUniqueCode() {
+    String generateUniqueCode() {
         for (int i = 0; i < 20; i++) {
             String candidate = randomCode();
             if (!guestRepository.existsByRegistrationCode(candidate)) {

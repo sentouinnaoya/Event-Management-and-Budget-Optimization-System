@@ -33,6 +33,8 @@ export default function EventDetailPage() {
   const eventId = Number(params.id);
   const [tab, setTab] = useState("overview");
   const { data: event, isLoading } = useGetEventQuery(eventId);
+  const readOnly =
+    event?.status === "COMPLETED" || event?.status === "FAILED" || event?.status === "ARCHIVED";
 
   if (isLoading || !event) {
     return (
@@ -77,15 +79,22 @@ export default function EventDetailPage() {
             ))}
           </div>
 
-          {tab === "overview" && <OverviewTab eventId={eventId} />}
-          {tab === "budget" && <BudgetTab eventId={eventId} />}
-          {tab === "vendors" && <VendorsTab eventId={eventId} />}
-          {tab === "staff" && <StaffTab eventId={eventId} />}
-          {tab === "tasks" && <TasksTab eventId={eventId} />}
-          {tab === "guests" && <GuestsTab eventId={eventId} />}
-          {tab === "expenses" && <ExpensesTab eventId={eventId} />}
+          {readOnly && (
+            <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm text-slate-600">
+              This event is <b>read-only</b> (status {event.status}). Only creating a new event
+              from a backup draft is still allowed.
+            </div>
+          )}
+
+          {tab === "overview" && <OverviewTab eventId={eventId} readOnly={readOnly} />}
+          {tab === "budget" && <BudgetTab eventId={eventId} readOnly={readOnly} />}
+          {tab === "vendors" && <VendorsTab eventId={eventId} readOnly={readOnly} />}
+          {tab === "staff" && <StaffTab eventId={eventId} readOnly={readOnly} />}
+          {tab === "tasks" && <TasksTab eventId={eventId} readOnly={readOnly} />}
+          {tab === "guests" && <GuestsTab eventId={eventId} readOnly={readOnly} />}
+          {tab === "expenses" && <ExpensesTab eventId={eventId} readOnly={readOnly} />}
           {tab === "reports" && <ReportsTab eventId={eventId} />}
-          {tab === "backup" && <BackupTab eventId={eventId} />}
+          {tab === "backup" && <BackupTab eventId={eventId} readOnly={readOnly} />}
         </div>
       </AppShell>
     </ProtectedRoute>

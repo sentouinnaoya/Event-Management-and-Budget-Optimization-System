@@ -95,6 +95,7 @@ public class EventService {
     @Transactional
     public EventDtos.Response update(Long id, User currentUser, EventDtos.Request request) {
         Event event = getOwnedEvent(id, currentUser);
+        assertNotLocked(event);
         validateDates(request);
         event.setName(request.name().trim());
         event.setDescription(request.description());
@@ -137,7 +138,7 @@ public class EventService {
         eventLogService.log(event, "PUBLISHED", "Event published", currentUser.getFullName());
         auditLogService.log(currentUser.getId(), currentUser.getFullName(), currentUser.getRole().name(),
                 "EVENT_PUBLISHED", "Event", event.getId(), event.getName(), "Event published");
-        publishStatusChanged(event, previous, EventStatus.PUBLISHED);
+        publishStatusChanged(event, previous, EventStatus.PUBLISHED, null);
         return response;
     }
 
@@ -172,17 +173,17 @@ public class EventService {
         eventLogService.log(event, "STATUS_CHANGED", message, currentUser.getFullName());
         auditLogService.log(currentUser.getId(), currentUser.getFullName(), currentUser.getRole().name(),
                 "EVENT_STATUS_CHANGED", "Event", event.getId(), event.getName(), message);
-        publishStatusChanged(event, current, newStatus);
+        publishStatusChanged(event, current, newStatus, reason);
         return response;
     }
 
-    private void publishStatusChanged(Event event, EventStatus from, EventStatus to) {
+    private void publishStatusChanged(Event event, EventStatus from, EventStatus to, String reason) {
         if (from == to) {
             return;
         }
         eventPublisher.publishEvent(new EventStatusChangedEvent(
                 event.getId(), event.getOrganizer().getId(), event.getName(),
-                from.name(), to.name()));
+                from.name(), to.name(), reason));
     }
 
     @Transactional(readOnly = true)
@@ -226,6 +227,15 @@ public class EventService {
             return EventStatus.valueOf(status.toUpperCase());
         } catch (IllegalArgumentException e) {
             return null;
+        }
+    }
+
+    public static void assertNotLocked(Event event) {
+        if (event.getStatus() == EventStatus.COMPLETED
+                || event.getStatus() == EventStatus.FAILED
+                || event.getStatus() == EventStatus.ARCHIVED) {
+            throw new BadRequestException(
+                    "This event is " + event.getStatus().name().toLowerCase() + " and is read-only");
         }
     }
 }

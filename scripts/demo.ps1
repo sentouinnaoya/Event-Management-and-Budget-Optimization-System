@@ -10,12 +10,12 @@ $BackendJar  = Join-Path $ProjectRoot "backend\target\embos-backend-0.0.1-SNAPSH
 $FrontendDir = Join-Path $ProjectRoot "frontend"
 $MavenPath   = Join-Path $env:LOCALAPPDATA "Programs\apache-maven\apache-maven-3.9.16\bin\mvn.cmd"
 
-# Optional email settings. Set RESEND_API_KEY to enable the approve/reject
-# emails (Resend, https://resend.com). EMBOS_MAIL_FROM must be a verified
-# sender in your Resend account (e.g. "EMBOS <onboarding@resend.dev>").
-$env:RESEND_API_KEY = if ($env:RESEND_API_KEY) { $env:RESEND_API_KEY } else { "" }
+# Optional email settings. Set BREVO_API_KEY to enable the approve/reject
+# emails (Brevo, https://brevo.com). EMBOS_MAIL_FROM must be a verified
+# sender in your Brevo account (e.g. "EMBOS <swam01708@gmail.com>").
+$env:BREVO_API_KEY = if ($env:BREVO_API_KEY) { $env:BREVO_API_KEY } else { "" }
 $env:EMBOS_APP_BASE_URL = if ($env:EMBOS_APP_BASE_URL) { $env:EMBOS_APP_BASE_URL } else { "http://localhost:3000" }
-$env:EMBOS_MAIL_FROM = if ($env:EMBOS_MAIL_FROM) { $env:EMBOS_MAIL_FROM } else { "EMBOS <onboarding@resend.dev>" }
+$env:EMBOS_MAIL_FROM = if ($env:EMBOS_MAIL_FROM) { $env:EMBOS_MAIL_FROM } else { "EMBOS <swam01708@gmail.com>" }
 
 function Test-Port($port) {
   return [bool](Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue)
@@ -91,6 +91,6 @@ if (Get-Command cloudflared -ErrorAction SilentlyContinue) {
 Write-Host ""
 Write-Host "Demo tips:"
 Write-Host "  - Guests: open the public URL -> /browse -> pick an event -> register (no login)."
-Write-Host "  - Set RESEND_API_KEY before launching to send approve/reject emails to the guest's"
+Write-Host "  - Set BREVO_API_KEY before launching to send approve/reject emails to the guest's"
 Write-Host "    inbox (check the API logs for the 'GuestStatusChangedEvent' on Approve/Reject)."
 Write-Host "  - Approved guests receive their ticket link by email."

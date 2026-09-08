@@ -47,7 +47,7 @@ const PRIORITY_LABELS: Record<number, string> = {
   5: "Critical",
 };
 
-export default function BudgetTab({ eventId }: { eventId: number }) {
+export default function BudgetTab({ eventId, readOnly = false }: { eventId: number; readOnly?: boolean }) {
   const { data, isLoading } = useBudgetSummaryQuery(eventId);
   const [addCategory, { isLoading: adding }] = useAddCategoryMutation();
   const [removeCategory] = useDeleteCategoryMutation();
@@ -211,6 +211,11 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader title="Add budget category" />
+          {readOnly ? (
+            <p className="text-sm text-slate-500">
+              This event is read-only. Budget categories cannot be modified.
+            </p>
+          ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
             <div>
               <Label required>Category name</Label>
@@ -265,6 +270,7 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
               </Button>
             </div>
           </form>
+          )}
         </Card>
 
         <Card>
@@ -373,23 +379,25 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
                       <StatusBadge status={c.alertLevel} />
                     </td>
                     <td className="py-3 text-right">
-                      <div className="flex items-center justify-end gap-3">
-                        <button
-                          onClick={() => openEdit(c)}
-                          className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm(`Delete category "${c.name}"?`))
-                              removeCategory({ eventId, id: c.id });
-                          }}
-                          className="text-xs font-medium text-red-600 hover:text-red-700"
-                        >
-                          Delete
-                        </button>
-                      </div>
+                      {!readOnly && (
+                        <div className="flex items-center justify-end gap-3">
+                          <button
+                            onClick={() => openEdit(c)}
+                            className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm(`Delete category "${c.name}"?`))
+                                removeCategory({ eventId, id: c.id });
+                            }}
+                            className="text-xs font-medium text-red-600 hover:text-red-700"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -401,6 +409,7 @@ export default function BudgetTab({ eventId }: { eventId: number }) {
 
       <OptimizerPanel
         eventId={eventId}
+        readOnly={readOnly}
         currentTotal={data.totalAllocated}
         hasCategories={data.categories.length > 0}
         budgetInput={budgetInput}
@@ -551,6 +560,7 @@ function EditCategoryModal({
 
 function OptimizerPanel(props: {
   eventId: number;
+  readOnly: boolean;
   currentTotal: number;
   hasCategories: boolean;
   budgetInput: string;
@@ -583,6 +593,7 @@ function OptimizerPanel(props: {
     onOptimize,
     onApply,
     onDismiss,
+    readOnly,
   } = props;
 
   const statusStyles = proposal
@@ -619,13 +630,14 @@ function OptimizerPanel(props: {
             placeholder={String(currentTotal)}
             value={budgetInput}
             onChange={(e) => setBudgetInput(e.target.value)}
+            disabled={readOnly}
           />
           <p className="mt-1 text-xs text-slate-500">
             Leave empty to use the currently allocated{" "}
             {formatMoney(currentTotal)}.
           </p>
         </div>
-        <Button type="submit" loading={optimizing} disabled={!hasCategories}>
+        <Button type="submit" loading={optimizing} disabled={!hasCategories || readOnly}>
           {optimizing ? "Optimizing…" : proposal ? "Re-run optimizer" : "Run optimizer"}
         </Button>
         {proposal && (
@@ -759,6 +771,7 @@ function OptimizerPanel(props: {
             </table>
           </div>
 
+          {!readOnly && (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs text-slate-500">
               Nothing is saved until you apply. {changedCount} of{" "}
@@ -768,6 +781,7 @@ function OptimizerPanel(props: {
               Apply to categories
             </Button>
           </div>
+          )}
         </div>
       )}
 

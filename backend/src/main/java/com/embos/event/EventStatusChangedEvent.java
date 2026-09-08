@@ -5,5 +5,6 @@ public record EventStatusChangedEvent(
         Long recipientId,
         String eventName,
         String fromStatus,
-        String toStatus) {
+        String toStatus,
+        String reason) {
 }

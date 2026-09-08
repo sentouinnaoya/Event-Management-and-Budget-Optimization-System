@@ -27,5 +27,5 @@ embos:
   app:
     base-url: "${EMBOS_APP_BASE_URL:http://localhost:3000}"
   mail:
-    resend-api-key: "${RESEND_API_KEY:}"
-    from: "${EMBOS_MAIL_FROM:EMBOS <onboarding@resend.dev>}"
+    brevo-api-key: "${BREVO_API_KEY:}"
+    from: "${EMBOS_MAIL_FROM:EMBOS <swam01708@gmail.com>}"

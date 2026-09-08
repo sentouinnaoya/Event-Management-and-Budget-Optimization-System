@@ -34,6 +34,7 @@ public class VendorService {
 
     @Transactional
     public VendorDtos.Response create(Event event, VendorDtos.Request request, String actor) {
+        EventService.assertNotLocked(event);
         Vendor vendor = Vendor.builder()
                 .event(event)
                 .name(request.name().trim())
@@ -60,6 +61,7 @@ public class VendorService {
 
     @Transactional
     public VendorDtos.Response update(Event event, Long vendorId, VendorDtos.Request request, String actor) {
+        EventService.assertNotLocked(event);
         Vendor vendor = getVendor(event, vendorId);
         vendor.setName(request.name().trim());
         vendor.setServiceType(request.serviceType().trim());
@@ -80,6 +82,7 @@ public class VendorService {
 
     @Transactional
     public void delete(Event event, Long vendorId, String actor) {
+        EventService.assertNotLocked(event);
         Vendor vendor = getVendor(event, vendorId);
         eventLogService.log(event, "VENDOR_DELETED",
                 "Deleted vendor '" + vendor.getName() + "' (" + vendor.getServiceType() + ")", actor);

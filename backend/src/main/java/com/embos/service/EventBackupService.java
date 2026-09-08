@@ -28,11 +28,13 @@ public class EventBackupService {
 
     @Transactional
     public EventBackupDtos.Response upsert(Event event, EventBackupDtos.Request request, String actor) {
+        EventService.assertNotLocked(event);
         EventBackup backup = eventBackupRepository.findByEventId(event.getId()).orElse(null);
         boolean created = backup == null;
         if (backup == null) {
             backup = EventBackup.builder().event(event).build();
         }
+        backup.setName(trimToNull(request.name()));
         backup.setBackupVenue(trimToNull(request.backupVenue()));
         backup.setBackupDate(request.backupDate());
         backup.setBackupCapacity(request.backupCapacity());
@@ -40,13 +42,14 @@ public class EventBackupService {
         backup.setBackupVendors(trimToNull(request.backupVendors()));
         backup.setNotes(trimToNull(request.notes()));
         backup.setUpdatedAt(LocalDateTime.now());
+        EventBackup saved = eventBackupRepository.save(backup);
         eventLogService.log(event, "BACKUP_UPDATED",
                 created ? "Backup plan created" : "Backup plan updated", actor);
         var u = SecurityUtils.currentUser();
         auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),
-                "BACKUP_UPDATED", "EventBackup", backup.getId(), event.getName(),
+                "BACKUP_UPDATED", "EventBackup", saved.getId(), event.getName(),
                 created ? "Created backup plan" : "Updated backup plan");
-        return toResponse(eventBackupRepository.save(backup));
+        return toResponse(saved);
     }
 
     private String trimToNull(String value) {
@@ -59,6 +62,7 @@ public class EventBackupService {
     private EventBackupDtos.Response toResponse(EventBackup backup) {
         return new EventBackupDtos.Response(
                 backup.getId(),
+                backup.getName(),
                 backup.getBackupVenue(),
                 backup.getBackupDate(),
                 backup.getBackupCapacity(),

@@ -32,6 +32,7 @@ import {
 } from "../ui";
 
 const backupSchema = z.object({
+  name: z.string().min(1, "Enter a name for the backup plan."),
   backupVenue: z.string().optional(),
   backupDate: z.string().optional(),
   backupCapacity: z.coerce.number().int().min(1).optional().nullable(),
@@ -42,7 +43,13 @@ const backupSchema = z.object({
 
 type BackupInput = z.infer<typeof backupSchema>;
 
-export default function BackupTab({ eventId }: { eventId: number }) {
+export default function BackupTab({
+  eventId,
+  readOnly = false,
+}: {
+  eventId: number;
+  readOnly?: boolean;
+}) {
   const router = useRouter();
   const { data: backup, isLoading: backupLoading } = useGetBackupQuery(eventId);
   const { data: recoveryPoints, isLoading: recoveryPointsLoading } = useListRecoveryPointsQuery(eventId);
@@ -52,8 +59,9 @@ export default function BackupTab({ eventId }: { eventId: number }) {
   const [restoreRecoveryPoint] = useRestoreRecoveryPointMutation();
   const [deleteRecoveryPoint] = useDeleteRecoveryPointMutation();
   const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<{ type: "error" | "success"; text: string } | null>(null);
-  const [recoveryPointLabel, setRecoveryPointLabel] = useState("");
+  const [planMsg, setPlanMsg] = useState<{ type: "error" | "success"; text: string } | null>(null);
+  const [draftsMsg, setDraftsMsg] = useState<{ type: "error" | "success"; text: string } | null>(null);
+  const [recoveryPointDraftName, setRecoveryPointDraftName] = useState("");
   const [restoringId, setRestoringId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [confirmRestore, setConfirmRestore] = useState<{ id: number; label: string } | null>(null);
@@ -66,6 +74,7 @@ export default function BackupTab({ eventId }: { eventId: number }) {
   } = useForm<z.input<typeof backupSchema>, unknown, BackupInput>({
     resolver: zodResolver(backupSchema),
     defaultValues: {
+      name: "",
       backupVenue: "",
       backupDate: "",
       backupCapacity: undefined,
@@ -78,6 +87,7 @@ export default function BackupTab({ eventId }: { eventId: number }) {
   useEffect(() => {
     if (backup) {
       reset({
+        name: backup.name ?? "",
         backupVenue: backup.backupVenue ?? "",
         backupDate: backup.backupDate ?? "",
         backupCapacity: backup.backupCapacity ?? undefined,
@@ -92,6 +102,7 @@ export default function BackupTab({ eventId }: { eventId: number }) {
     setSaving(true);
     try {
       const body: EventBackupInput = {
+        name: input.name?.trim() || undefined,
         backupVenue: input.backupVenue || undefined,
         backupDate: input.backupDate || undefined,
         backupCapacity: input.backupCapacity ? Number(input.backupCapacity) : undefined,
@@ -100,25 +111,27 @@ export default function BackupTab({ eventId }: { eventId: number }) {
         notes: input.notes || undefined,
       };
       await updateBackup({ eventId, body }).unwrap();
-      setMsg({ type: "success", text: "Backup plan saved." });
+      const label = body.name?.trim() || "Backup draft";
+      await createRecoveryPoint({ eventId, label }).unwrap();
+      setPlanMsg({ type: "success", text: "Backup plan saved and a new backup draft was created." });
     } catch (e) {
-      setMsg({ type: "error", text: apiError(e) });
+      setPlanMsg({ type: "error", text: apiError(e) });
     } finally {
       setSaving(false);
     }
   }
 
   async function onCreateRecoveryPoint() {
-    if (!recoveryPointLabel.trim()) {
-      setMsg({ type: "error", text: "Enter a label for the draft." });
+    if (!recoveryPointDraftName.trim()) {
+      setDraftsMsg({ type: "error", text: "Enter a name for the backup draft." });
       return;
     }
     try {
-      await createRecoveryPoint({ eventId, label: recoveryPointLabel.trim() }).unwrap();
-      setRecoveryPointLabel("");
-      setMsg({ type: "success", text: "Draft created." });
+      await createRecoveryPoint({ eventId, label: recoveryPointDraftName.trim() }).unwrap();
+      setRecoveryPointDraftName("");
+      setDraftsMsg({ type: "success", text: "Backup draft created." });
     } catch (e) {
-      setMsg({ type: "error", text: apiError(e) });
+      setDraftsMsg({ type: "error", text: apiError(e) });
     }
   }
 
@@ -129,7 +142,7 @@ export default function BackupTab({ eventId }: { eventId: number }) {
       setConfirmRestore(null);
       router.push(`/events/${restored.id}`);
     } catch (e) {
-      setMsg({ type: "error", text: apiError(e) });
+      setDraftsMsg({ type: "error", text: apiError(e) });
       setRestoringId(null);
     }
   }
@@ -139,9 +152,9 @@ export default function BackupTab({ eventId }: { eventId: number }) {
     try {
       await deleteRecoveryPoint({ eventId, recoveryPointId }).unwrap();
       setConfirmDelete(null);
-      setMsg({ type: "success", text: "Draft deleted." });
+      setDraftsMsg({ type: "success", text: "Backup draft deleted." });
     } catch (e) {
-      setMsg({ type: "error", text: apiError(e) });
+      setDraftsMsg({ type: "error", text: apiError(e) });
     } finally {
       setDeletingId(null);
     }
@@ -163,20 +176,33 @@ export default function BackupTab({ eventId }: { eventId: number }) {
           subtitle="Pre-fill fallback details in case the event is suspended or fails"
         />
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div>
+            <Label>Name</Label>
+            <Input
+              placeholder="e.g. Backup plan A"
+              invalid={!!errors.name}
+              {...register("name")}
+            />
+            <FieldError message={errors.name?.message} />
+            <p className="mt-1 text-xs text-slate-500">
+              Used as the label of the backup draft created when you save.
+            </p>
+          </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <Label>Backup venue</Label>
-              <Input {...register("backupVenue")} />
+              <Input disabled={readOnly} {...register("backupVenue")} />
             </div>
             <div>
               <Label>Backup date</Label>
-              <Input type="date" {...register("backupDate")} />
+              <Input type="date" disabled={readOnly} {...register("backupDate")} />
             </div>
             <div>
               <Label>Backup capacity</Label>
               <Input
                 type="number"
                 min={1}
+                disabled={readOnly}
                 invalid={!!errors.backupCapacity}
                 {...register("backupCapacity")}
               />
@@ -188,6 +214,7 @@ export default function BackupTab({ eventId }: { eventId: number }) {
                 type="number"
                 min={0}
                 step="0.01"
+                disabled={readOnly}
                 invalid={!!errors.contingencyBudget}
                 {...register("contingencyBudget")}
               />
@@ -198,53 +225,70 @@ export default function BackupTab({ eventId }: { eventId: number }) {
             <Label>Backup vendors</Label>
             <Textarea
               rows={2}
+              disabled={readOnly}
               placeholder="List backup vendors (one per line)"
               {...register("backupVendors")}
             />
           </div>
           <div>
             <Label>Notes</Label>
-            <Textarea rows={2} {...register("notes")} />
+            <Textarea rows={2} disabled={readOnly} {...register("notes")} />
           </div>
-          {msg && (
+          {planMsg && (
             <div
               className={`rounded-lg px-3 py-2 text-sm ${
-                msg.type === "error" ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"
+                planMsg.type === "error" ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"
               }`}
             >
-              {msg.text}
+              {planMsg.text}
             </div>
           )}
           <div className="flex gap-3">
-            <Button type="submit" loading={saving}>
-              Save backup plan
-            </Button>
-            <Button type="button" variant="secondary" onClick={() => reset()}>
-              Reset
-            </Button>
+            {!readOnly && (
+              <Button type="submit" loading={saving}>
+                Create backup
+              </Button>
+            )}
+            {!readOnly && (
+              <Button type="button" variant="secondary" onClick={() => reset()}>
+                Reset
+              </Button>
+            )}
           </div>
         </form>
       </Card>
 
       <Card>
         <CardHeader
-          title="Drafts"
-          subtitle="Save a copy of the plan (budget, vendors, staff, open tasks) to restore into a new event"
+          title="Backup drafts"
+          subtitle="Create a new event from a saved draft (budget, vendors, staff, open tasks)"
         />
         <div className="flex items-end gap-3">
           <div className="flex-1">
-            <Label>Draft label</Label>
+            <Label>Draft name</Label>
             <Input
               placeholder="e.g. Before cancellation"
-              value={recoveryPointLabel}
-              onChange={(e) => setRecoveryPointLabel(e.target.value)}
+              value={recoveryPointDraftName}
+              onChange={(e) => setRecoveryPointDraftName(e.target.value)}
+              disabled={readOnly}
             />
           </div>
-          <Button onClick={onCreateRecoveryPoint}>Create draft</Button>
+          {!readOnly && (
+            <Button onClick={onCreateRecoveryPoint}>Create backup draft</Button>
+          )}
         </div>
+        {draftsMsg && (
+          <div
+            className={`mt-3 rounded-lg px-3 py-2 text-sm ${
+              draftsMsg.type === "error" ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"
+            }`}
+          >
+            {draftsMsg.text}
+          </div>
+        )}
         {!recoveryPoints || recoveryPoints.length === 0 ? (
           <div className="mt-4">
-            <EmptyState title="No drafts yet" />
+            <EmptyState title="No backup drafts yet" />
           </div>
         ) : (
           <div className="mt-4 overflow-x-auto">
@@ -283,17 +327,19 @@ export default function BackupTab({ eventId }: { eventId: number }) {
                             loading={restoringId === s.id}
                             onClick={() => setConfirmRestore({ id: s.id, label: s.label })}
                           >
-                            Restore
+                            Create new event from backup
                           </Button>
                         )}
-                        <button
-                          type="button"
-                          className="text-xs font-medium text-red-600 hover:text-red-700"
-                          disabled={deletingId === s.id}
-                          onClick={() => setConfirmDelete({ id: s.id, label: s.label })}
-                        >
-                          {deletingId === s.id ? "Deleting…" : "Delete"}
-                        </button>
+                        {!readOnly && (
+                          <button
+                            type="button"
+                            className="text-xs font-medium text-red-600 hover:text-red-700"
+                            disabled={deletingId === s.id}
+                            onClick={() => setConfirmDelete({ id: s.id, label: s.label })}
+                          >
+                            {deletingId === s.id ? "Deleting…" : "Delete"}
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -331,12 +377,13 @@ export default function BackupTab({ eventId }: { eventId: number }) {
 
       <Modal open={confirmRestore !== null}
         onClose={() => setConfirmRestore(null)}
-        title="Restore draft"
+        title="Create new event from backup"
       >
         <div className="space-y-3">
           <p className="text-sm text-slate-500">
-            Restoring &quot;{confirmRestore?.label}&quot; creates a <b>new draft event</b> with the saved
-            budget, vendors, staff, and open tasks. Guests and expenses are not copied.
+            Creating a new event from &quot;{confirmRestore?.label}&quot; uses the backup plan&apos;s
+            venue, date, and capacity, plus the saved budget, vendors, staff, and open tasks.
+            Guests and expenses are not copied.
           </p>
           <div className="flex justify-end gap-2 pt-1">
             <Button type="button" variant="secondary" onClick={() => setConfirmRestore(null)}>
@@ -347,7 +394,7 @@ export default function BackupTab({ eventId }: { eventId: number }) {
               loading={restoringId !== null}
               onClick={() => confirmRestore && onRestore(confirmRestore.id)}
             >
-              Restore
+              Create event
             </Button>
           </div>
         </div>
@@ -356,7 +403,7 @@ export default function BackupTab({ eventId }: { eventId: number }) {
       <Modal
         open={confirmDelete !== null}
         onClose={() => setConfirmDelete(null)}
-        title="Delete draft"
+        title="Delete backup draft"
       >
         <div className="space-y-3">
           <p className="text-sm text-slate-500">

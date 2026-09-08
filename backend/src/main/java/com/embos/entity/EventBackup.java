@@ -36,6 +36,9 @@ public class EventBackup {
     @JoinColumn(name = "event_id", nullable = false, unique = true)
     private Event event;
 
+    @Column(length = 150)
+    private String name;
+
     @Column(length = 200)
     private String backupVenue;
 

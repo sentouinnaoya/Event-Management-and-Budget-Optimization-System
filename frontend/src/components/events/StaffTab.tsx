@@ -24,7 +24,7 @@ import {
   apiError,
 } from "../ui";
 
-export default function StaffTab({ eventId }: { eventId: number }) {
+export default function StaffTab({ eventId, readOnly = false }: { eventId: number; readOnly?: boolean }) {
   const { data: staff, isLoading } = useListStaffQuery(eventId);
   const [addStaff] = useAddStaffMutation();
   const [updateStaff] = useUpdateStaffMutation();
@@ -93,9 +93,11 @@ export default function StaffTab({ eventId }: { eventId: number }) {
         title="Staff"
         subtitle={`${staff.length} member(s) assigned`}
         action={
-          <Button onClick={openCreate} className="px-3 py-1.5 text-xs">
-            Add staff
-          </Button>
+          !readOnly && (
+            <Button onClick={openCreate} className="px-3 py-1.5 text-xs">
+              Add staff
+            </Button>
+          )
         }
       />
       {staff.length === 0 ? (
@@ -126,23 +128,25 @@ export default function StaffTab({ eventId }: { eventId: number }) {
                   <td className="py-3 pr-4 text-slate-600">{m.responsibility}</td>
                   <td className="py-3 pr-4 text-slate-600">{m.phone || "—"}</td>
                   <td className="py-3 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => openEdit(m)}
-                        className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (confirm(`Remove ${m.name}?`))
-                            removeStaff({ eventId, id: m.id });
-                        }}
-                        className="text-xs font-medium text-red-600 hover:text-red-700"
-                      >
-                        Delete
-                      </button>
-                    </div>
+                    {!readOnly && (
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => openEdit(m)}
+                          className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`Remove ${m.name}?`))
+                              removeStaff({ eventId, id: m.id });
+                          }}
+                          className="text-xs font-medium text-red-600 hover:text-red-700"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}

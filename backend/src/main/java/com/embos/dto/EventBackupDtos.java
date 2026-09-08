@@ -1,6 +1,8 @@
 package com.embos.dto;
 
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -8,6 +10,7 @@ import java.time.LocalDate;
 public final class EventBackupDtos {
 
     public record Request(
+            @NotBlank(message = "Draft name is required") @Size(max = 150) String name,
             String backupVenue,
             LocalDate backupDate,
             Integer backupCapacity,
@@ -18,6 +21,7 @@ public final class EventBackupDtos {
 
     public record Response(
             Long id,
+            String name,
             String backupVenue,
             LocalDate backupDate,
             Integer backupCapacity,

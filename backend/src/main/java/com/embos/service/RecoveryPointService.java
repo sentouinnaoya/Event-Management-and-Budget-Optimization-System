@@ -4,18 +4,24 @@ import com.embos.dto.EventDtos;
 import com.embos.dto.RecoveryPointDtos;
 import com.embos.entity.BudgetCategory;
 import com.embos.entity.Event;
+import com.embos.entity.EventBackup;
+import com.embos.entity.Guest;
 import com.embos.entity.RecoveryPoint;
 import com.embos.entity.Staff;
 import com.embos.entity.Task;
 import com.embos.entity.Vendor;
 import com.embos.entity.enums.EventStatus;
+import com.embos.entity.enums.GuestStatus;
+import com.embos.entity.enums.GuestType;
 import com.embos.entity.enums.Priority;
 import com.embos.entity.enums.TaskStatus;
 import com.embos.entity.enums.VendorStatus;
 import com.embos.event.RecoveryPointRestoredEvent;
 import com.embos.exception.NotFoundException;
 import com.embos.repository.BudgetCategoryRepository;
+import com.embos.repository.EventBackupRepository;
 import com.embos.repository.EventRepository;
+import com.embos.repository.GuestRepository;
 import com.embos.repository.RecoveryPointRepository;
 import com.embos.security.SecurityUtils;
 import com.embos.repository.StaffRepository;
@@ -46,6 +52,9 @@ public class RecoveryPointService {
     private final VendorRepository vendorRepository;
     private final StaffRepository staffRepository;
     private final TaskRepository taskRepository;
+    private final EventBackupRepository eventBackupRepository;
+    private final GuestRepository guestRepository;
+    private final GuestService guestService;
     private final EventLogService eventLogService;
     private final AuditLogService auditLogService;
     private final ObjectMapper objectMapper;
@@ -53,6 +62,8 @@ public class RecoveryPointService {
 
     @Transactional
     public RecoveryPointDtos.Response create(Event event, String label, String actor) {
+        EventService.assertNotLocked(event);
+        EventBackup backup = eventBackupRepository.findByEventId(event.getId()).orElse(null);
         RecoveryData data = new RecoveryData(
                 event.getName(),
                 event.getDescription(),
@@ -61,6 +72,14 @@ public class RecoveryPointService {
                 event.getVenue(),
                 event.getCapacity(),
                 event.getRegistrationDeadline(),
+                event.getEventType(),
+                event.getContactEmail(),
+                backup == null ? null : backup.getBackupVenue(),
+                backup == null ? null : backup.getBackupDate(),
+                backup == null ? null : backup.getBackupCapacity(),
+                backup == null ? null : backup.getContingencyBudget(),
+                backup == null ? null : backup.getBackupVendors(),
+                backup == null ? null : backup.getNotes(),
                 budgetCategoryRepository.findAllByEventIdOrderByCreatedAtAsc(event.getId()).stream()
                         .map(c -> new CategoryData(c.getName(), c.getAllocatedAmount(), c.getAlertThresholdPct(), c.getPriority()))
                         .toList(),
@@ -76,6 +95,10 @@ public class RecoveryPointService {
                         .map(t -> new TaskData(t.getTitle(), t.getDescription(),
                                 t.getAssignedStaff() == null ? null : t.getAssignedStaff().getName(),
                                 t.getDueDate(), t.getPriority().name(), t.getStatus().name()))
+                        .toList(),
+                guestRepository.findAllByEventIdOrderByCreatedAtAsc(event.getId()).stream()
+                        .map(g -> new GuestData(g.getName(), g.getEmail(), g.getPhone(),
+                                g.getGuestType().name(), g.getStatus().name()))
                         .toList());
         RecoveryPoint recoveryPoint = RecoveryPoint.builder()
                 .event(event)
@@ -101,6 +124,7 @@ public class RecoveryPointService {
 
     @Transactional
     public void delete(Event event, Long recoveryPointId, String actor) {
+        EventService.assertNotLocked(event);
         RecoveryPoint recoveryPoint = recoveryPointRepository.findByIdAndEventId(recoveryPointId, event.getId())
                 .orElseThrow(() -> new NotFoundException("Draft not found"));
         eventLogService.log(event, "RECOVERY_POINT_DELETED", "Recovery point deleted: " + recoveryPoint.getLabel(), actor);
@@ -117,15 +141,30 @@ public class RecoveryPointService {
                 .orElseThrow(() -> new NotFoundException("Recovery point not found"));
         RecoveryData data = read(recoveryPoint.getData());
 
+        String venue = data.venue();
+        LocalDate date = data.date();
+        Integer capacity = data.capacity();
+        if (data.backupVenue() != null && !data.backupVenue().isBlank()) {
+            venue = data.backupVenue();
+        }
+        if (data.backupDate() != null) {
+            date = data.backupDate();
+        }
+        if (data.backupCapacity() != null) {
+            capacity = data.backupCapacity();
+        }
+
         Event newEvent = Event.builder()
                 .organizer(source.getOrganizer())
                 .name(data.name())
                 .description(data.description())
-                .date(data.date())
+                .date(date)
                 .durationInDays(data.durationInDays() == null ? 1 : data.durationInDays())
-                .venue(data.venue())
-                .capacity(data.capacity())
+                .venue(venue)
+                .capacity(capacity)
                 .registrationDeadline(data.registrationDeadline())
+                .eventType(data.eventType())
+                .contactEmail(data.contactEmail())
                 .status(EventStatus.DRAFT)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
@@ -191,7 +230,35 @@ public class RecoveryPointService {
         }
         newEvent.setTasks(tasks);
 
+        if (data.guests() != null) {
+            List<Guest> guests = new ArrayList<>();
+            for (GuestData g : data.guests()) {
+                guests.add(Guest.builder()
+                        .event(newEvent)
+                        .name(g.name())
+                        .email(g.email())
+                        .phone(g.phone())
+                        .guestType(parseGuestType(g.guestType()))
+                        .status(parseGuestStatus(g.status()))
+                        .registrationCode(guestService.generateUniqueCode())
+                        .createdAt(LocalDateTime.now())
+                        .build());
+            }
+            newEvent.setGuests(guests);
+        }
+
         Event saved = eventRepository.save(newEvent);
+
+        if (data.contingencyBudget() != null || data.backupVendors() != null || data.notes() != null) {
+            EventBackup backup = EventBackup.builder()
+                    .event(saved)
+                    .contingencyBudget(data.contingencyBudget())
+                    .backupVendors(data.backupVendors())
+                    .notes(data.notes())
+                    .updatedAt(LocalDateTime.now())
+                    .build();
+            eventBackupRepository.save(backup);
+        }
 
         recoveryPoint.setRestoredEventId(saved.getId());
         recoveryPoint.setRestoredAt(LocalDateTime.now());
@@ -248,6 +315,22 @@ public class RecoveryPointService {
         }
     }
 
+    private GuestType parseGuestType(String type) {
+        try {
+            return GuestType.valueOf(type);
+        } catch (IllegalArgumentException e) {
+            return GuestType.ONLINE;
+        }
+    }
+
+    private GuestStatus parseGuestStatus(String status) {
+        try {
+            return GuestStatus.valueOf(status);
+        } catch (IllegalArgumentException e) {
+            return GuestStatus.REGISTERED;
+        }
+    }
+
     private RecoveryPointDtos.Response toResponse(RecoveryPoint recoveryPoint) {
         return new RecoveryPointDtos.Response(
                 recoveryPoint.getId(), recoveryPoint.getLabel(),
@@ -272,10 +355,19 @@ public class RecoveryPointService {
             String venue,
             Integer capacity,
             LocalDate registrationDeadline,
+            String eventType,
+            String contactEmail,
+            String backupVenue,
+            LocalDate backupDate,
+            Integer backupCapacity,
+            BigDecimal contingencyBudget,
+            String backupVendors,
+            String notes,
             List<CategoryData> budgetCategories,
             List<VendorData> vendors,
             List<StaffData> staff,
-            List<TaskData> tasks) {
+            List<TaskData> tasks,
+            List<GuestData> guests) {
     }
 
     record CategoryData(String name, BigDecimal allocatedAmount, BigDecimal alertThresholdPct, Integer priority) {
@@ -290,5 +382,8 @@ public class RecoveryPointService {
 
     record TaskData(String title, String description, String assignedStaffName, LocalDate dueDate,
                     String priority, String status) {
+    }
+
+    record GuestData(String name, String email, String phone, String guestType, String status) {
     }
 }

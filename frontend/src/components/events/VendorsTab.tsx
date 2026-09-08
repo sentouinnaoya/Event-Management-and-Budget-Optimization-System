@@ -23,6 +23,7 @@ import {
   Modal,
   Select,
   Spinner,
+  StatusBadge,
   apiError,
   formatMoney,
 } from "../ui";
@@ -37,7 +38,7 @@ const emptyForm = {
   status: "ASSIGNED" as const,
 };
 
-export default function VendorsTab({ eventId }: { eventId: number }) {
+export default function VendorsTab({ eventId, readOnly = false }: { eventId: number; readOnly?: boolean }) {
   const { data: vendors, isLoading } = useListVendorsQuery(eventId);
   const [addVendor] = useAddVendorMutation();
   const [updateVendor] = useUpdateVendorMutation();
@@ -140,9 +141,11 @@ export default function VendorsTab({ eventId }: { eventId: number }) {
         title="Vendors"
         subtitle={`${vendors.length} vendor(s) assigned`}
         action={
-          <Button onClick={openCreate} className="px-3 py-1.5 text-xs">
-            Add vendor
-          </Button>
+          !readOnly && (
+            <Button onClick={openCreate} className="px-3 py-1.5 text-xs">
+              Add vendor
+            </Button>
+          )
         }
       />
       {vendors.length === 0 ? (
@@ -180,35 +183,41 @@ export default function VendorsTab({ eventId }: { eventId: number }) {
                     {v.assignedAmount ? formatMoney(v.assignedAmount) : "—"}
                   </td>
                   <td className="py-3 pr-4">
-                    <Select
-                      value={v.status}
-                      onChange={(e) => changeStatus(v, e.target.value)}
-                      className="w-32 px-2 py-1 text-xs"
-                    >
-                      <option value="ASSIGNED">Assigned</option>
-                      <option value="CONFIRMED">Confirmed</option>
-                      <option value="PAID">Paid</option>
-                      <option value="COMPLETED">Completed</option>
-                    </Select>
+                    {readOnly ? (
+                      <StatusBadge status={v.status} />
+                    ) : (
+                      <Select
+                        value={v.status}
+                        onChange={(e) => changeStatus(v, e.target.value)}
+                        className="w-32 px-2 py-1 text-xs"
+                      >
+                        <option value="ASSIGNED">Assigned</option>
+                        <option value="CONFIRMED">Confirmed</option>
+                        <option value="PAID">Paid</option>
+                        <option value="COMPLETED">Completed</option>
+                      </Select>
+                    )}
                   </td>
                   <td className="py-3 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => openEdit(v)}
-                        className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (confirm(`Delete vendor "${v.name}"?`))
-                            removeVendor({ eventId, id: v.id });
-                        }}
-                        className="text-xs font-medium text-red-600 hover:text-red-700"
-                      >
-                        Delete
-                      </button>
-                    </div>
+                    {!readOnly && (
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => openEdit(v)}
+                          className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`Delete vendor "${v.name}"?`))
+                              removeVendor({ eventId, id: v.id });
+                          }}
+                          className="text-xs font-medium text-red-600 hover:text-red-700"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}

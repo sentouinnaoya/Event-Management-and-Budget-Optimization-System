@@ -32,7 +32,7 @@ const statusActions: Array<{ label: string; status: GuestStatus; tone?: string }
   { label: "Mark absent", status: "ABSENT" },
 ];
 
-export default function GuestsTab({ eventId }: { eventId: number }) {
+export default function GuestsTab({ eventId, readOnly = false }: { eventId: number; readOnly?: boolean }) {
   const { data: guests, isLoading } = useListGuestsQuery(eventId);
   const [addGuest] = useAddGuestMutation();
   const [updateStatus] = useUpdateGuestStatusMutation();
@@ -99,9 +99,11 @@ export default function GuestsTab({ eventId }: { eventId: number }) {
           title="Guests"
           subtitle={`${guests.length} guest(s)`}
           action={
-            <Button onClick={() => { setOpen(true); setError(null); }} className="px-3 py-1.5 text-xs">
-              Add guest
-            </Button>
+            !readOnly && (
+              <Button onClick={() => { setOpen(true); setError(null); }} className="px-3 py-1.5 text-xs">
+                Add guest
+              </Button>
+            )
           }
         />
         {guests.length === 0 ? (
@@ -150,21 +152,23 @@ export default function GuestsTab({ eventId }: { eventId: number }) {
                       <StatusBadge status={g.status} />
                     </td>
                     <td className="py-3">
-                      <div className="flex flex-wrap gap-1.5">
-                        {statusActions.map((a) => (
-                          <button
-                            key={a.status}
-                            onClick={() => updateStatus({ eventId, id: g.id, status: a.status })}
-                            className={
-                              a.status === "REJECTED"
-                                ? "rounded border border-red-200 px-2 py-0.5 text-xs font-medium text-red-600 hover:bg-red-50"
-                                : "rounded border border-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
-                            }
-                          >
-                            {a.label}
-                          </button>
-                        ))}
-                      </div>
+                      {!readOnly && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {statusActions.map((a) => (
+                            <button
+                              key={a.status}
+                              onClick={() => updateStatus({ eventId, id: g.id, status: a.status })}
+                              className={
+                                a.status === "REJECTED"
+                                  ? "rounded border border-red-200 px-2 py-0.5 text-xs font-medium text-red-600 hover:bg-red-50"
+                                  : "rounded border border-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                              }
+                            >
+                              {a.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}

@@ -15,7 +15,7 @@ $FrontendLogFile = Join-Path $LogsDir "frontend.log"
 $MavenPath = Join-Path $env:LOCALAPPDATA "Programs\apache-maven\apache-maven-3.9.16\bin\mvn.cmd"
 $NpmExe    = "C:\Program Files\nodejs\npm.cmd"
 
-# --- Email (Resend) ---
+# --- Email (Brevo) ---
 # Read from .env.local (gitignored) if present; never commit real keys.
 $envFile = Join-Path $ProjectRoot ".env.local"
 if (Test-Path $envFile) {
@@ -25,11 +25,11 @@ if (Test-Path $envFile) {
         }
     }
 }
-if (-not $env:RESEND_API_KEY) {
-    $env:RESEND_API_KEY = "re_placeholder_change_me"
+if (-not $env:BREVO_API_KEY) {
+    $env:BREVO_API_KEY = "xkeysib_placeholder_change_me"
 }
 if (-not $env:EMBOS_MAIL_FROM) {
-    $env:EMBOS_MAIL_FROM = "EMBOS <onboarding@resend.dev>"
+    $env:EMBOS_MAIL_FROM = "EMBOS <swam01708@gmail.com>"
 }
 
 function Test-Port($p) {

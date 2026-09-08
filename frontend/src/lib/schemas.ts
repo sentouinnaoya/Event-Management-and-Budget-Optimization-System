@@ -8,7 +8,12 @@ export const loginSchema = z.object({
 export const registerSchema = z.object({
   fullName: z.string().min(2, "Full name is required"),
   email: z.string().email("Enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z
+    .string()
+    .min(6, "Password must be at least 6 characters")
+    .regex(/[a-zA-Z]/, "Password must include at least one letter")
+    .regex(/\d/, "Password must include at least one number")
+    .regex(/[^a-zA-Z0-9]/, "Password must include at least one symbol"),
 });
 
 export const eventSchema = z.object({

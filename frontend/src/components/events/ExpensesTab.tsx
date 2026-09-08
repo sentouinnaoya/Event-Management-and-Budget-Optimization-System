@@ -29,7 +29,7 @@ import {
   formatMoney,
 } from "../ui";
 
-export default function ExpensesTab({ eventId }: { eventId: number }) {
+export default function ExpensesTab({ eventId, readOnly = false }: { eventId: number; readOnly?: boolean }) {
   const { data: expenses, isLoading } = useListExpensesQuery(eventId);
   const { data: budget } = useBudgetSummaryQuery(eventId);
   const { data: vendors } = useListVendorsQuery(eventId);
@@ -133,8 +133,9 @@ export default function ExpensesTab({ eventId }: { eventId: number }) {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader title="Record an expense" />
+      {!readOnly && (
+        <Card>
+          <CardHeader title="Record an expense" />
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
           <div>
             <Label required>Description</Label>
@@ -209,6 +210,7 @@ export default function ExpensesTab({ eventId }: { eventId: number }) {
           </Button>
         </form>
       </Card>
+      )}
 
       <Card>
         <CardHeader
@@ -254,15 +256,17 @@ export default function ExpensesTab({ eventId }: { eventId: number }) {
                       <StatusBadge status={e.paymentStatus} />
                     </td>
                     <td className="py-3 text-right">
-                      <button
-                        onClick={() => {
-                          if (confirm("Delete this expense?"))
-                            removeExpense({ eventId, id: e.id });
-                        }}
-                        className="text-xs font-medium text-red-600 hover:text-red-700"
-                      >
-                        Delete
-                      </button>
+                      {!readOnly && (
+                        <button
+                          onClick={() => {
+                            if (confirm("Delete this expense?"))
+                              removeExpense({ eventId, id: e.id });
+                          }}
+                          className="text-xs font-medium text-red-600 hover:text-red-700"
+                        >
+                          Delete
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

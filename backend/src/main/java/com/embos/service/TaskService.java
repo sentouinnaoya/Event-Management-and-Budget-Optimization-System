@@ -39,6 +39,7 @@ public class TaskService {
 
     @Transactional
     public TaskDtos.Response create(Event event, TaskDtos.Request request) {
+        EventService.assertNotLocked(event);
         Staff staff = request.assignedStaffId() == null
                 ? null
                 : staffService.getStaff(event, request.assignedStaffId());
@@ -69,6 +70,7 @@ public class TaskService {
 
     @Transactional
     public TaskDtos.Response update(Event event, Long taskId, TaskDtos.Request request) {
+        EventService.assertNotLocked(event);
         Task task = getTask(event, taskId);
         Staff staff = request.assignedStaffId() == null
                 ? null
@@ -89,6 +91,7 @@ public class TaskService {
 
     @Transactional
     public TaskDtos.Response updateStatus(Event event, Long taskId, String status) {
+        EventService.assertNotLocked(event);
         Task task = getTask(event, taskId);
         applyStatus(task, parseStatus(status));
         Task saved = taskRepository.save(task);
@@ -101,6 +104,7 @@ public class TaskService {
 
     @Transactional
     public void delete(Event event, Long taskId) {
+        EventService.assertNotLocked(event);
         Task task = getTask(event, taskId);
         var u = SecurityUtils.currentUser();
         auditLogService.log(u.getId(), u.getFullName(), u.getRole().name(),

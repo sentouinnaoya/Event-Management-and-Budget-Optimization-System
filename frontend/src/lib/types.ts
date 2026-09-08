@@ -335,6 +335,7 @@ export interface EventLog {
 
 export interface EventBackup {
   id: number;
+  name?: string;
   backupVenue?: string;
   backupDate?: string;
   backupCapacity?: number;
@@ -345,6 +346,7 @@ export interface EventBackup {
 }
 
 export interface EventBackupInput {
+  name?: string;
   backupVenue?: string;
   backupDate?: string;
   backupCapacity?: number;

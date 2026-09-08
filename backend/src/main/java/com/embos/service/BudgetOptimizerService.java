@@ -60,6 +60,7 @@ public class BudgetOptimizerService {
 
     @Transactional
     public BudgetDtos.SummaryResponse apply(Event event, List<BudgetDtos.AppliedAllocation> allocations, String actor) {
+        EventService.assertNotLocked(event);
         if (allocations.isEmpty()) {
             throw new BadRequestException("No allocations to apply");
         }

@@ -43,6 +43,7 @@ public class ExpenseService {
 
     @Transactional
     public ExpenseDtos.Response create(Event event, ExpenseDtos.Request request, String actor) {
+        EventService.assertNotLocked(event);
         BudgetCategory category = budgetService.getCategory(event, request.categoryId());
         Vendor vendor = request.vendorId() == null
                 ? null
@@ -72,6 +73,7 @@ public class ExpenseService {
 
     @Transactional
     public ExpenseDtos.Response update(Event event, Long expenseId, ExpenseDtos.Request request, String actor) {
+        EventService.assertNotLocked(event);
         Expense expense = getExpense(event, expenseId);
         expense.setCategory(budgetService.getCategory(event, request.categoryId()));
         expense.setVendor(request.vendorId() == null
@@ -112,6 +114,7 @@ public class ExpenseService {
 
     @Transactional
     public void delete(Event event, Long expenseId, String actor) {
+        EventService.assertNotLocked(event);
         Expense expense = getExpense(event, expenseId);
         eventLogService.log(event, "EXPENSE_DELETED",
                 "Deleted expense '" + expense.getDescription() + "' of " + expense.getAmount().toPlainString()
